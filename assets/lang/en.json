@@ -1,0 +1,23 @@
+{
+    "app_title": "Little Steps",
+    "settings": "Settings",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية",
+    "vaccinations": "Vaccinations",
+    "growth": "Growth",
+    "health_tips": "Health Tips",
+    "health_records": "Health Records",
+    "symptoms": "Symptoms",
+    "manage_children": "Manage Children",
+    "completed": "Completed",
+    "upcoming": "Upcoming",
+    "missed": "Missed",
+    "legend": "Legend",
+    "select_child": "Select a Child",
+    "no_child_selected": "No Child Selected",
+    "completed_desc": "Vaccination is done ✅",
+    "upcoming_desc": "Vaccination is scheduled 🕒",
+    "missed_desc": "Vaccination was missed ❌"
+  }
+  

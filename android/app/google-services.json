@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "619264119180",
+    "project_id": "web2-e85d3",
+    "storage_bucket": "web2-e85d3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:619264119180:android:37b8382df3014bb26106a9",
+        "android_client_info": {
+          "package_name": "com.example.littlesteps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKQSNlhnZuT8WR6DTRx5tMb1Y27oq9Q1o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
