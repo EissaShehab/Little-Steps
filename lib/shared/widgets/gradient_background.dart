@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class GradientBackground extends StatelessWidget {
-  final Widget child;
+  final Widget? child;
   final List<Color> colors;
   final Alignment begin;
   final Alignment end;
   final bool showPattern;
-  final String? patternImage; // Optional pattern overlay (e.g., stars, clouds)
+  final String? patternImage;
 
   const GradientBackground({
     super.key,
-    required this.child,
+    this.child,
     this.colors = const [],
     this.begin = Alignment.topCenter,
     this.end = Alignment.bottomCenter,
@@ -18,9 +18,9 @@ class GradientBackground extends StatelessWidget {
     this.patternImage,
   });
 
-  GradientBackground.defaultGradient({
+  const GradientBackground.defaultGradient({
     super.key,
-    required this.child,
+    this.child,
     this.showPattern = false,
     this.patternImage,
   })  : colors = const [],
@@ -31,12 +31,17 @@ class GradientBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Default gradient colors with feature-specific overrides
     final gradientColors = colors.isNotEmpty
         ? colors
         : isDark
-            ? [const Color(0xFF0D47A1), const Color(0xFF1976D2)] // Darker, richer blue for dark mode
-            : [const Color(0xFF42A5F5), const Color(0xFFE3F2FD)]; // Lighter blue to off-white for light mode
+            ? [
+                const Color(0xFF0D47A1),
+                const Color(0xFF42A5F5)
+              ] // Dark theme gradient
+            : [
+                const Color(0xFF1976D2),
+                const Color(0xFF64B5F6)
+              ]; // Light theme gradient
 
     return Container(
       decoration: BoxDecoration(
@@ -44,12 +49,13 @@ class GradientBackground extends StatelessWidget {
           begin: begin,
           end: end,
           colors: gradientColors,
+          stops: const [0.0, 1.0], // Smooth gradient transition
         ),
         image: showPattern && patternImage != null
             ? DecorationImage(
                 image: AssetImage(patternImage!),
                 fit: BoxFit.cover,
-                opacity: 0.1, // Subtle overlay
+                opacity: 0.05, // Subtle pattern opacity
               )
             : null,
       ),

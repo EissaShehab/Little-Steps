@@ -55,7 +55,7 @@ class GrowthMeasurement extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'date': date.toIso8601String(), // تحويل DateTime إلى سلسلة نصية
+      'date': Timestamp.fromDate(date), 
       'weight': weight,
       'height': height,
       'headCircumference': headCircumference,

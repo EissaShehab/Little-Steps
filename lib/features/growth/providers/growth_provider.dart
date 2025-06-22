@@ -1,20 +1,21 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:collection/collection.dart';
+
 import '../data/growth_service.dart';
 import '../models/growth_model.dart';
 
 final logger = Logger();
 
-// مزود GrowthService
+/// Provider لـ GrowthService
 final growthServiceProvider = Provider<GrowthService>((ref) => GrowthService());
 
-// StreamProvider لاسترجاع القياسات في الوقت الفعلي
-final growthMeasurementsProvider =
-    StreamProvider.autoDispose.family<List<GrowthMeasurement>, String>((ref, childId) {
-  return ref.watch(growthServiceProvider).getMeasurements(childId);
+/// StreamProvider لمتابعة القياسات من Firestore مباشرة بدون compute()
+final growthMeasurementsProvider = StreamProvider.family<List<GrowthMeasurement>, String>((ref, childId) {
+  return ref.watch(growthServiceProvider).getMeasurements(childId, null);
 });
 
-// StateNotifier لإدارة الحالة المحلية
 class GrowthNotifier extends StateNotifier<List<GrowthMeasurement>> {
   final GrowthService _growthService;
 
@@ -22,7 +23,6 @@ class GrowthNotifier extends StateNotifier<List<GrowthMeasurement>> {
     _initialize();
   }
 
-  // تهيئة الحالة من التخزين المحلي أو Firestore
   Future<void> _initialize() async {
     try {
       logger.i("✅ GrowthNotifier initialized");
@@ -31,12 +31,13 @@ class GrowthNotifier extends StateNotifier<List<GrowthMeasurement>> {
     }
   }
 
-  // إضافة قياس جديد
   Future<void> addMeasurement(String childId, GrowthMeasurement measurement) async {
     try {
       final updatedMeasurement = await _growthService.addMeasurement(childId, measurement);
       if (!mounted) return;
-      state = [...state, updatedMeasurement].where((m) => m.ageInMonths <= 60).toList()
+      state = [...state, updatedMeasurement]
+          .where((m) => m.ageInMonths <= 60)
+          .toList()
         ..sort((a, b) => a.date.compareTo(b.date));
       logger.i("✅ Added measurement for child $childId");
     } catch (e) {
@@ -45,7 +46,6 @@ class GrowthNotifier extends StateNotifier<List<GrowthMeasurement>> {
     }
   }
 
-  // حذف قياس
   Future<void> deleteMeasurement(String childId, String measurementId) async {
     try {
       await _growthService.deleteMeasurement(childId, measurementId);
@@ -58,22 +58,24 @@ class GrowthNotifier extends StateNotifier<List<GrowthMeasurement>> {
     }
   }
 
-  // تحديث الحالة من الـ Stream
   void updateFromStream(List<GrowthMeasurement> measurements) {
     if (!mounted) return;
-    state = measurements.where((m) => m.ageInMonths <= 60).toList()
+    final newMeasurements = measurements
+        .where((m) => m.ageInMonths <= 60)
+        .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
-    logger.i("✅ State updated from stream with ${measurements.length} measurements");
+    if (!const ListEquality().equals(state, newMeasurements)) {
+      state = newMeasurements;
+      logger.i("✅ State updated from stream with ${measurements.length} measurements");
+    }
   }
 }
 
-// مزود GrowthNotifier
-final growthProvider =
-    StateNotifierProvider.autoDispose.family<GrowthNotifier, List<GrowthMeasurement>, String>(
-        (ref, childId) {
+/// StateNotifierProvider بيربط الـ GrowthNotifier بالـ stream ويراقبه
+final growthProvider = StateNotifierProvider.family<GrowthNotifier, List<GrowthMeasurement>, String>((ref, childId) {
   final notifier = GrowthNotifier(ref.read(growthServiceProvider));
 
-  // الاستماع إلى الـ Stream وتحديث الحالة
+  // مراقبة التحديثات القادمة من stream
   ref.listen<AsyncValue<List<GrowthMeasurement>>>(
     growthMeasurementsProvider(childId),
     (previous, next) {

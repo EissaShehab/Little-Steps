@@ -1,38 +1,42 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:littlesteps/features/health_tips/data/health_tips_service.dart';
+import 'package:flutter/material.dart';
+import 'package:littlesteps/features/settings/presentation/settings_screen.dart' show localeProvider;
 
 final logger = Logger();
 
-class HealthTipsFilter {
-  final String selectedCategory;
-  final String searchQuery;
+final userIdProvider = Provider<String?>((ref) {
+  return FirebaseAuth.instance.currentUser?.uid;
+});
 
-  HealthTipsFilter({this.selectedCategory = "All", this.searchQuery = ""});
+final healthTipsServiceProvider = Provider((ref) => HealthTipsService());
 
-  HealthTipsFilter copyWith({String? selectedCategory, String? searchQuery}) {
-    return HealthTipsFilter(
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      searchQuery: searchQuery ?? this.searchQuery,
-    );
+final dailyHealthTipProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, childId) async {
+  final userId = ref.read(userIdProvider);
+  if (userId == null) {
+    logger.w("❌ No user ID available.");
+    return null;
   }
+  final language = ref.watch(localeProvider).languageCode; 
+  final service = ref.read(healthTipsServiceProvider);
+  return await service.getDailyTipForChild(userId, childId, language);
+});
+
+final childTipsStreamProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, childId) {
+  final userId = ref.read(userIdProvider);
+  if (userId == null) {
+    logger.w("❌ No user ID available.");
+    return const Stream.empty();
+  }
+  final language = ref.watch(localeProvider).languageCode; 
+  final service = ref.read(healthTipsServiceProvider);
+  return service.getTipsForChild(userId, childId, language);
+});
+
+int calculateAgeInMonths(DateTime birthDate) {
+  final now = DateTime.now();
+  final difference = now.difference(birthDate);
+  return (difference.inDays / 30).floor();
 }
-
-class HealthTipsFilterNotifier extends StateNotifier<HealthTipsFilter> {
-  HealthTipsFilterNotifier() : super(HealthTipsFilter());
-
-  void setCategory(String category) {
-    logger.i("🔄 Setting health tips category to: $category");
-    state = state.copyWith(selectedCategory: category);
-  }
-
-  void setSearchQuery(String query) {
-    logger.i("🔍 Updating health tips search query to: $query");
-    // Debounce could be handled externally in the widget, but ensure lightweight updates
-    state = state.copyWith(searchQuery: query);
-  }
-}
-
-// Riverpod provider for filtering state
-final healthTipsFilterProvider = StateNotifierProvider<HealthTipsFilterNotifier, HealthTipsFilter>(
-  (ref) => HealthTipsFilterNotifier(),
-);

@@ -1,0 +1,66 @@
+[
+    {
+      "title": "Start exclusive breastfeeding",
+      "content": "Breastfeed exclusively for the first 6 months to provide optimal nutrition and immunity.",
+      "category": "Nutrition",
+      "source": "WHO",
+      "age_range": "0-6 months",
+      "date": "2025-04-05"
+    },
+    {
+      "title": "Keep the newborn warm",
+      "content": "Ensure the baby is kept warm with skin-to-skin contact immediately after birth.",
+      "category": "Newborn Care",
+      "source": "WHO",
+      "age_range": "0-6 months",
+      "date": "2025-04-05"
+    },
+    {
+      "title": "Introduce solid foods",
+      "content": "Begin with mashed vegetables and fruits at 6 months alongside breastfeeding.",
+      "category": "Nutrition",
+      "source": "WHO",
+      "age_range": "6-12 months",
+      "date": "2025-04-06"
+    },
+    {
+      "title": "First measles vaccine",
+      "content": "Ensure your child receives the measles vaccine at 9 months.",
+      "category": "Vaccination",
+      "source": "Jordan Ministry of Health",
+      "age_range": "6-12 months",
+      "date": "2025-04-06"
+    },
+    {
+      "title": "Encourage walking",
+      "content": "Support your child to take first steps with assistance around 12 months.",
+      "category": "Physical Activity",
+      "source": "WHO",
+      "age_range": "12-24 months",
+      "date": "2025-04-07"
+    },
+    {
+      "title": "Monitor sleep patterns",
+      "content": "Ensure 10-12 hours of sleep daily for healthy growth at this age.",
+      "category": "Sleep",
+      "source": "WHO",
+      "age_range": "12-24 months",
+      "date": "2025-04-07"
+    },
+    {
+      "title": "Promote oral health",
+      "content": "Brush teeth twice daily with fluoride toothpaste starting at 2 years.",
+      "category": "Oral Health",
+      "source": "WHO",
+      "age_range": "24-60 months",
+      "date": "2025-04-08"
+    },
+    {
+      "title": "Balanced diet for growth",
+      "content": "Provide a variety of foods including vegetables, fruits, and proteins daily.",
+      "category": "Nutrition",
+      "source": "WHO",
+      "age_range": "24-60 months",
+      "date": "2025-04-08"
+    }
+  ]

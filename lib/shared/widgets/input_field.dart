@@ -10,6 +10,9 @@ class InputField extends StatelessWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final bool obscureText;
   final Widget? suffixIcon;
+  final bool filled;
+  final Color? fillColor;
+  final double borderRadius;
 
   const InputField({
     required this.controller,
@@ -21,49 +24,70 @@ class InputField extends StatelessWidget {
     this.onFieldSubmitted,
     this.obscureText = false,
     this.suffixIcon,
+    this.filled = false,
+    this.fillColor,
+    this.borderRadius = 12.0,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      validator: validator,
-      onFieldSubmitted: onFieldSubmitted,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-        ),
-        labelStyle: const TextStyle(color: Colors.white70),
-        hintStyle: const TextStyle(color: Colors.white70),
-        errorStyle: const TextStyle(color: Colors.redAccent),
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15), // Subtle shadow for depth
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      style: const TextStyle(color: Colors.white),
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        validator: validator,
+        onFieldSubmitted: onFieldSubmitted,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon:
+              Icon(icon, color: Colors.white70), // Matches RegistrationScreen
+          suffixIcon: suffixIcon,
+          filled: filled,
+          fillColor: fillColor ??
+              Colors.white.withOpacity(0.1), // Frosted glass effect
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(
+                color: Colors.white38, width: 1), // Subtle border
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(
+                color: Color(0xFFFFCA28), width: 2), // Amber accent
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          ),
+          labelStyle: const TextStyle(
+              color: Colors.white70), // Matches RegistrationScreen
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+          errorStyle: const TextStyle(color: Colors.redAccent),
+        ),
+        style: const TextStyle(color: Colors.white), // White text for contrast
+      ),
     );
   }
 }

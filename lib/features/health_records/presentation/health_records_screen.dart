@@ -3,27 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:logger/logger.dart';
+
 import 'package:littlesteps/features/child_profile/models/child_model.dart';
 import 'package:littlesteps/features/health_records/models/health_record_model.dart';
 import 'package:littlesteps/features/health_records/providers/health_records_provider.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
+import 'package:littlesteps/providers/providers.dart';
 import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
-import 'package:logger/logger.dart';
 import 'package:littlesteps/shared/widgets/typography.dart';
 
 final logger = Logger();
 
 class HealthRecordsScreen extends ConsumerStatefulWidget {
-  final ChildProfile child;
-
-  const HealthRecordsScreen({super.key, required this.child});
+  const HealthRecordsScreen({super.key});
 
   @override
-  ConsumerState<HealthRecordsScreen> createState() =>
-      _HealthRecordsScreenState();
+  ConsumerState<HealthRecordsScreen> createState() => _HealthRecordsScreenState();
 }
 
 class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
@@ -35,11 +35,11 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     )..forward();
     _fadeAnimation =
-        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOutCubic);
   }
 
   @override
@@ -50,15 +50,33 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final recordsAsync = ref.watch(healthRecordsProvider(widget.child.id));
+
+    final selectedChild = ref.watch(selectedChildProvider);
+    final recordsAsync = ref.watch(healthRecordsProvider);
+
+    if (selectedChild == null) {
+      return Scaffold(
+        appBar: CustomAppBar(title: tr.healthRecords),
+        body: Center(
+          child: Text(
+            tr.selectChildFirstMessage,
+            style: AppTypography.bodyStyle.copyWith(
+              fontSize: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Health Records - ${widget.child.name}',
+        title: tr.healthRecordsFor(selectedChild.name),
         trailingIcon: Icons.add,
-        onTrailingPressed: () => _showAddRecordDialog(context),
+        onTrailingPressed: () => _showAddRecordDialog(context, selectedChild),
       ),
       body: GradientBackground(
         showPattern: false,
@@ -66,171 +84,22 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
           data: (records) => records.isEmpty
               ? Center(
                   child: Text(
-                    'No health records yet.\nTap + to add one!',
+                    tr.noHealthRecords,
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyStyle.copyWith(
                       color: isDark
                           ? Colors.white70
                           : colorScheme.onSurfaceVariant,
+                      fontSize: 16,
                     ),
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   itemCount: records.length,
                   itemBuilder: (context, index) {
                     final record = records[index];
-                    return AnimatedBuilder(
-                      animation: _fadeAnimation,
-                      builder: (context, child) => Opacity(
-                        opacity: _fadeAnimation.value,
-                        child: Card(
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: isDark
-                                  ? Colors.grey[600]!
-                                  : Colors.transparent,
-                              width: 1,
-                            ),
-                          ),
-                          color:
-                              isDark ? Colors.grey[800] : colorScheme.surface,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.medical_services,
-                              color: colorScheme
-                                  .error, // Health records accent color
-                              size: 32,
-                            ),
-                            title: Text(
-                              record.title,
-                              style: AppTypography.subheadingStyle.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : colorScheme.onSurface,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  DateFormat.yMMMd().format(record.date),
-                                  style: AppTypography.bodyStyle.copyWith(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : colorScheme.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  record.description,
-                                  style: AppTypography.bodyStyle.copyWith(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : colorScheme.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                if (record.attachmentUrl != null) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.attach_file,
-                                        size: 16,
-                                        color: isDark
-                                            ? Colors.white70
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          record.fileName ?? 'Attachment',
-                                          style:
-                                              AppTypography.bodyStyle.copyWith(
-                                            color: colorScheme.primary,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                      AnimatedScaleButton(
-                                        onPressed: () async {
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) => Center(
-                                              child: CircularProgressIndicator(
-                                                color: colorScheme.primary,
-                                              ),
-                                            ),
-                                          );
-                                          try {
-                                            await _downloadFile(
-                                              context,
-                                              record.attachmentUrl!,
-                                              record.fileName ?? 'attachment',
-                                            );
-                                          } finally {
-                                            Navigator.pop(context);
-                                          }
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.primary,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: colorScheme.primary
-                                                    .withOpacity(0.3),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.download,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Download',
-                                                style: AppTypography.buttonStyle
-                                                    .copyWith(
-                                                  color: Colors.white,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                Icons.delete,
-                                color: colorScheme.error,
-                              ),
-                              onPressed: () => _confirmDelete(context, record),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
+                    return _buildHealthRecordCard(context, record, index);
                   },
                 ),
           loading: () => Center(
@@ -238,9 +107,10 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
           ),
           error: (error, _) => Center(
             child: Text(
-              'Error: $error',
+              '${tr.error}: $error',
               style: AppTypography.bodyStyle.copyWith(
                 color: isDark ? Colors.redAccent : colorScheme.error,
+                fontSize: 16,
               ),
             ),
           ),
@@ -249,9 +119,71 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
     );
   }
 
-  void _showAddRecordDialog(BuildContext context) {
+  Widget _buildHealthRecordCard(BuildContext context, HealthRecord record, int index) {
+    final tr = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dismissible(
+      key: Key(record.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: colorScheme.error,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) => _confirmDelete(context, record),
+      onDismissed: (_) async {
+        await ref.read(healthRecordsProvider.notifier).deleteRecord(
+              record.id,
+              record.attachmentUrl,
+            );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(tr.recordDeleted),
+          backgroundColor: colorScheme.primary,
+        ));
+      },
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: Icon(Icons.description, color: colorScheme.primary),
+          title: Text(record.title, style: AppTypography.subheadingStyle),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 6),
+              Text(DateFormat.yMMMd().format(record.date),
+                  style: AppTypography.bodyStyle),
+              const SizedBox(height: 4),
+              Text(record.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodyStyle.copyWith(fontSize: 13)),
+              if (record.attachmentUrl != null)
+                TextButton.icon(
+                  onPressed: () async {
+                    await _downloadFile(
+                      context,
+                      record.attachmentUrl!,
+                      record.fileName ?? 'attachment',
+                    );
+                  },
+                  icon: const Icon(Icons.download, size: 18),
+                  label: Text(tr.download),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddRecordDialog(BuildContext context, ChildProfile child) {
+    final tr = AppLocalizations.of(context)!;
     final titleController = TextEditingController();
     final descController = TextEditingController();
     DateTime selectedDate = DateTime.now();
@@ -261,343 +193,130 @@ class _HealthRecordsScreenState extends ConsumerState<HealthRecordsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Add Health Record',
-          style: AppTypography.subheadingStyle.copyWith(
-            color: isDark ? Colors.white : colorScheme.primary,
-          ),
-        ),
-        content: StatefulBuilder(
-          builder: (context, setState) => SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Title (e.g., Vaccination)',
-                    border: const OutlineInputBorder(),
-                    labelStyle: AppTypography.bodyStyle.copyWith(
-                      color: isDark ? Colors.white70 : colorScheme.onSurface,
-                    ),
-                  ),
-                  style: AppTypography.bodyStyle.copyWith(
-                    color: isDark ? Colors.white : colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: descController,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: const OutlineInputBorder(),
-                    labelStyle: AppTypography.bodyStyle.copyWith(
-                      color: isDark ? Colors.white70 : colorScheme.onSurface,
-                    ),
-                  ),
-                  maxLines: 2,
-                  style: AppTypography.bodyStyle.copyWith(
-                    color: isDark ? Colors.white : colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        selectedFile == null
-                            ? 'No file selected'
-                            : 'File: ${fileName ?? ''}',
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyStyle.copyWith(
-                          color:
-                              isDark ? Colors.white70 : colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    AnimatedScaleButton(
-                      onPressed: () async {
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.custom,
-                          allowedExtensions: ['jpg', 'png', 'pdf', 'xlsx'],
-                        );
-                        if (result != null) {
-                          final file = File(result.files.single.path!);
-                          final size = await file.length();
-                          if (size > 10 * 1024 * 1024) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('File size exceeds 10MB limit'),
-                                backgroundColor: colorScheme.error,
-                              ),
-                            );
-                            return;
-                          }
-                          setState(() {
-                            selectedFile = file;
-                            fileName = result.files.single.name;
-                          });
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'Upload File',
-                          style: AppTypography.buttonStyle.copyWith(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                AnimatedScaleButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      setState(() => selectedDate = picked);
+        title: Text(tr.addHealthRecord),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(controller: titleController, decoration: InputDecoration(labelText: tr.titleExample)),
+              TextField(controller: descController, decoration: InputDecoration(labelText: tr.description)),
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: () async {
+                  final result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf', 'jpg', 'png'],
+                  );
+                  if (result != null) {
+                    final file = File(result.files.single.path!);
+                    final size = await file.length();
+                    if (size > 10 * 1024 * 1024) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(tr.fileSizeExceedsLimit),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ));
+                      return;
                     }
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'Select Date: ${DateFormat.yMMMd().format(selectedDate)}',
-                      style: AppTypography.bodyStyle.copyWith(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                    setState(() {
+                      selectedFile = file;
+                      fileName = result.files.single.name;
+                    });
+                  }
+                },
+                icon: const Icon(Icons.attach_file),
+                label: Text(selectedFile == null
+                    ? tr.noFileSelected
+                    : tr.fileSelected(fileName ?? '')),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() => selectedDate = picked);
+                  }
+                },
+                child: Text('${tr.selectDate}: ${DateFormat.yMMMd().format(selectedDate)}'),
+              ),
+            ],
           ),
-        ),
-        backgroundColor: isDark ? Colors.grey[800] : colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
         ),
         actions: [
-          AnimatedScaleButton(
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTypography.buttonStyle.copyWith(
-                color: colorScheme.error,
-              ),
-            ),
+            child: Text(tr.cancel),
           ),
-          AnimatedScaleButton(
+          ElevatedButton(
             onPressed: () {
               if (titleController.text.isEmpty || descController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Please fill in all fields'),
-                    backgroundColor: colorScheme.error,
-                  ),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(tr.pleaseFillAllFields),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ));
                 return;
               }
-              ref
-                  .read(healthRecordsProvider(widget.child.id).notifier)
-                  .addRecord(
+              ref.read(healthRecordsProvider.notifier).addRecord(
                     titleController.text,
                     selectedDate,
                     descController.text,
                     file: selectedFile,
                   );
               Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(tr.recordAdded),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ));
             },
-            child: Text(
-              'Save',
-              style: AppTypography.buttonStyle.copyWith(
-                color: colorScheme.primary,
-              ),
-            ),
+            child: Text(tr.save),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, HealthRecord record) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
+  Future<bool?> _confirmDelete(BuildContext context, HealthRecord record) {
+    final tr = AppLocalizations.of(context)!;
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Record',
-          style: AppTypography.subheadingStyle.copyWith(
-            color: isDark ? Colors.white : colorScheme.error,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this record?',
-          style: AppTypography.bodyStyle.copyWith(
-            color: isDark ? Colors.white70 : colorScheme.onSurface,
-          ),
-        ),
-        backgroundColor: isDark ? Colors.grey[800] : colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        title: Text(tr.deleteRecord),
+        content: Text(tr.confirmDeleteRecord),
         actions: [
-          AnimatedScaleButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTypography.buttonStyle.copyWith(
-                color: colorScheme.primary,
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(tr.cancel),
           ),
-          AnimatedScaleButton(
-            onPressed: () {
-              ref
-                  .read(healthRecordsProvider(widget.child.id).notifier)
-                  .deleteRecord(record.id, record.attachmentUrl);
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Delete',
-              style: AppTypography.buttonStyle.copyWith(
-                color: colorScheme.error,
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr.delete),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _downloadFile(
-      BuildContext context, String url, String fileName) async {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Future<void> _downloadFile(BuildContext context, String url, String fileName) async {
+    final tr = AppLocalizations.of(context)!;
     try {
       final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) {
-        throw 'Failed to download file: ${response.statusCode}';
-      }
+      if (response.statusCode != 200) throw 'Failed to download file';
 
-      final tempDir = await getTemporaryDirectory();
-      final sanitizedFileName = fileName.replaceAll(RegExp(r'[^\w\s-]'), '_');
-      final filePath = '${tempDir.path}/$sanitizedFileName';
-      final file = File(filePath);
-
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/$fileName';
+      final file = File(path);
       await file.writeAsBytes(response.bodyBytes);
 
-      final result = await OpenFile.open(filePath);
-      if (result.type != ResultType.done) {
-        throw 'Could not open file: ${result.message}';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download complete'),
-          backgroundColor: colorScheme.primary,
-          action: SnackBarAction(
-            label: 'Open',
-            textColor: Colors.white,
-            onPressed: () => OpenFile.open(filePath),
-          ),
-        ),
-      );
+      await OpenFile.open(path);
     } catch (e) {
-      logger.e('Error downloading file: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error downloading file: $e'),
-          backgroundColor: colorScheme.error,
-        ),
-      );
+      logger.e("Download error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(tr.errorDownloadingFile(e.toString())),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
     }
-  }
-}
-
-class AnimatedScaleButton extends StatefulWidget {
-  final VoidCallback onPressed;
-  final Widget child;
-
-  const AnimatedScaleButton({
-    super.key,
-    required this.onPressed,
-    required this.child,
-  });
-
-  @override
-  _AnimatedScaleButtonState createState() => _AnimatedScaleButtonState();
-}
-
-class _AnimatedScaleButtonState extends State<AnimatedScaleButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onPressed();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
-    );
   }
 }

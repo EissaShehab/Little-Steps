@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 
 final logger = Logger();
@@ -27,11 +28,30 @@ class AuthService {
         await user.updateDisplayName(name);
         await user.reload();
 
+        // إنشاء وثيقة المستخدم مع حقل fcmToken فارغ مبدئيًا
         await _firestore.collection('users').doc(user.uid).set({
           'email': email.trim(),
           'name': name,
+          'fcmToken': null, // حقل فارغ لتجنب الأخطاء لاحقًا
           'createdAt': FieldValue.serverTimestamp(),
         });
+        logger.i("✅ User document created for: ${user.email}");
+
+        // تحديث رمز FCM بعد إنشاء الوثيقة
+        try {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await _firestore.collection('users').doc(user.uid).update({
+              'fcmToken': token,
+            });
+            logger.i("✅ FCM token updated for user ${user.uid}: $token");
+          } else {
+            logger.w("⚠️ Failed to retrieve FCM token during registration.");
+          }
+        } catch (e) {
+          logger.e("❌ Error updating FCM token during registration: $e");
+        }
+
         logger.i("✅ User registered successfully: ${user.email}");
       }
       return user;
@@ -46,7 +66,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
@@ -71,7 +92,8 @@ class AuthService {
     }
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {

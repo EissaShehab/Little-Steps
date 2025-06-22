@@ -7,7 +7,7 @@ import 'package:logger/logger.dart';
 final logger = Logger();
 
 // Provider to fetch child profiles in real-time
-final childProvider = StreamProvider.autoDispose<List<ChildProfile>>((ref) {
+final childProfilesProvider = StreamProvider.autoDispose<List<ChildProfile>>((ref) {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) {
     logger.w("❌ User not logged in, returning empty stream.");
@@ -15,29 +15,34 @@ final childProvider = StreamProvider.autoDispose<List<ChildProfile>>((ref) {
   }
 
   logger.i("🔍 Fetching child profiles for user ${user.uid}...");
-  
+
   return FirebaseFirestore.instance
       .collection('users')
       .doc(user.uid)
       .collection('children')
-      .orderBy('createdAt', descending: true)
+      .orderBy('updatedAt', descending: true)
       .snapshots()
       .map((snapshot) {
         final uniqueChildren = <String, ChildProfile>{};
+        int successCount = 0;
+        int errorCount = 0;
+
         for (var doc in snapshot.docs) {
           try {
             final child = ChildProfile.fromFirestore(doc, doc.id);
             uniqueChildren[child.id] = child;
+            successCount++;
           } catch (e) {
             logger.w("⚠️ Error parsing child profile ${doc.id}: $e");
+            errorCount++;
           }
         }
         final childrenList = uniqueChildren.values.toList();
-        logger.i("🔹 Loaded ${childrenList.length} child profiles for user ${user.uid}");
+        logger.i("🔹 Loaded $successCount child profiles successfully and skipped $errorCount errors for user ${user.uid}");
         return childrenList;
       })
-      .handleError((error) {
-        logger.e("❌ Error fetching child profiles for user ${user.uid}: $error");
+      .handleError((error, stackTrace) {
+        logger.e("❌ Error fetching child profiles for user ${user.uid}: $error, StackTrace: $stackTrace");
         return Stream.value([]); // Graceful fallback
       });
 });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:littlesteps/providers/providers.dart';
 import 'package:littlesteps/routes/app_routes.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
@@ -53,16 +54,22 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       );
 
       final authService = ref.read(authServiceProvider);
-      await authService.registerWithEmail(
+      final user = await authService.registerWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
       );
 
-      if (mounted) {
-        Navigator.of(context).pop(); // Close the loading dialog
-        logger.i("✅ User registered successfully: ${_emailController.text}, navigating to ${AppRoutes.login}");
-        context.go(AppRoutes.login);
+      if (user != null) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser == null) {
+          throw Exception('User authentication failed after registration');
+        }
+
+        logger.i(
+            "✅ User registered and authenticated successfully: ${user.email}");
+        Navigator.of(context).pop();
+        context.go(AppRoutes.childProfile);
       }
     } on FirebaseAuthException catch (e) {
       logger.e("❌ Registration failed: ${e.code} - ${e.message}");
@@ -102,199 +109,209 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     );
   }
 
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    body: GradientBackground(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: const [Color(0xFF2196F3), Colors.white],
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.child_care,
-                            size: 60,
-                            color: Colors.white,
-                            semanticLabel: 'Child Care Icon',
-                          ),
-                          const SizedBox(height: 20),
-                          RichText(
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'L',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blueAccent,
-                                    letterSpacing: 0.5,
-                                  ),
+  @override
+  Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      body: GradientBackground(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        showPattern: true, // Enable pattern (optional, requires patternImage)
+        // patternImage: 'assets/pattern.png', // Uncomment and provide asset path if desired
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32.0, vertical: 40.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.child_care,
+                                size: 70, color: Colors.white),
+                            const SizedBox(height: 24),
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                      text: 'LittleSteps',
+                                      style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(
+                                              0xFFFFCA28))), // Amber accent
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              tr.createAccount,
+                              style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              tr.startTracking,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 16),
+                            ),
+                            const SizedBox(height: 48),
+                            InputField(
+                              controller: _nameController,
+                              focusNode: _nameFocusNode,
+                              label: tr.fullName,
+                              icon: Icons.person,
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              borderRadius: 12,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return tr.fullNameRequired;
+                                if (value.length < 2)
+                                  return tr.fullNameMinLength;
+                                return null;
+                              },
+                              onFieldSubmitted: (_) =>
+                                  _emailFocusNode.requestFocus(),
+                            ),
+                            const SizedBox(height: 16),
+                            InputField(
+                              controller: _emailController,
+                              focusNode: _emailFocusNode,
+                              label: tr.email,
+                              icon: Icons.mark_email_read_sharp,
+                              keyboardType: TextInputType.emailAddress,
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              borderRadius: 12,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return tr.emailRequired;
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$')
+                                    .hasMatch(value)) {
+                                  return tr.invalidEmail;
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) =>
+                                  _passwordFocusNode.requestFocus(),
+                            ),
+                            const SizedBox(height: 16),
+                            InputField(
+                              controller: _passwordController,
+                              focusNode: _passwordFocusNode,
+                              label: tr.password,
+                              icon: Icons.password_rounded,
+                              obscureText: _obscurePassword,
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              borderRadius: 12,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return tr.passwordRequired;
+                                if (value.length < 8)
+                                  return tr.passwordMinLength;
+                                if (!RegExp(r'(?=.*[A-Z])').hasMatch(value))
+                                  return tr.passwordUppercase;
+                                if (!RegExp(r'(?=.*[a-z])').hasMatch(value))
+                                  return tr.passwordLowercase;
+                                if (!RegExp(r'(?=.*\d)').hasMatch(value))
+                                  return tr.passwordNumber;
+                                if (!RegExp(r'(?=.*[!@#\$%^&*(),.?":{}|<>])')
+                                    .hasMatch(value)) return tr.passwordSpecial;
+                                return null;
+                              },
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.white70,
                                 ),
-                                TextSpan(
-                                  text: 'ittleSteps',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 0.5,
-                                  ),
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                              ),
+                              onFieldSubmitted: (_) => _register(),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  tr.alreadyHaveAccount,
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 15),
+                                ),
+                                TextLink(
+                                  text: '',
+                                  linkText: tr.loginHere,
+                                  onTap: () => context.go(AppRoutes.login),
+                                  linkStyle: const TextStyle(
+                                      color: Color(0xFFFFCA28), // Amber accent
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15),
                                 ),
                               ],
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Create Account',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                            textAlign: TextAlign.center,
-                            semanticsLabel: 'Create Account Title',
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Start tracking your child\'s health journey',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          InputField(
-                            controller: _nameController,
-                            focusNode: _nameFocusNode,
-                            label: 'Full Name',
-                            icon: Icons.person,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return 'Full Name is required';
-                              if (value.length < 2) return 'Name must be at least 2 characters';
-                              return null;
-                            },
-                            onFieldSubmitted: (value) => _emailFocusNode.requestFocus(),
-                          ),
-                          const SizedBox(height: 20),
-                          InputField(
-                            controller: _emailController,
-                            focusNode: _emailFocusNode,
-                            label: 'Email',
-                            icon: Icons.mark_email_read_sharp,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return 'Email is required';
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value))
-                                return 'Enter a valid email address';
-                              return null;
-                            },
-                            onFieldSubmitted: (value) => _passwordFocusNode.requestFocus(),
-                          ),
-                          const SizedBox(height: 20),
-                          InputField(
-                            controller: _passwordController,
-                            focusNode: _passwordFocusNode,
-                            label: 'Password',
-                            icon: Icons.password_rounded,
-                            obscureText: _obscurePassword,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return 'Password is required';
-                              if (value.length < 8) return 'Password must be at least 8 characters';
-                              if (!RegExp(r'(?=.*[A-Z])').hasMatch(value))
-                                return 'Password must contain at least one uppercase letter';
-                              if (!RegExp(r'(?=.*[a-z])').hasMatch(value))
-                                return 'Password must contain at least one lowercase letter';
-                              if (!RegExp(r'(?=.*\d)').hasMatch(value))
-                                return 'Password must contain at least one number';
-                              if (!RegExp(r'(?=.*[!@#$%^&*(),.?":{}|<>])').hasMatch(value))
-                                return 'Password must contain at least one special character';
-                              return null;
-                            },
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                color: Colors.white70,
-                                semanticLabel: _obscurePassword ? 'Show Password' : 'Hide Password',
-                              ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                            onFieldSubmitted: (value) => _register(),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Already have an account? ',
-                                style: TextStyle(color: Colors.white70, fontSize: 15),
-                              ),
-                              TextLink(
-                                text: '',
-                                linkText: 'Login here',
-                                onTap: () => context.go(AppRoutes.login),
-                                linkStyle: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                            const SizedBox(height: 32),
+                            AnimatedOpacity(
+                              opacity: _isLoading ? 0.7 : 1.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Color(0xFFFFCA28), // Amber button
+                                  foregroundColor: Colors.black87,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 100, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.3),
                                 ),
-                                semanticLabel: 'Navigate to Login Screen',
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.black87,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        tr.register,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : () async => await _register(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                              elevation: 5,
-                              shadowColor: Colors.blueAccent.withOpacity(0.3),
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: Colors.blueAccent, strokeWidth: 2),
-                                  )
-                                : const Text(
-                                    'Register',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.blueAccent,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    semanticsLabel: 'Register Button',
-                                  ),
-                          ),
-                          const SizedBox(height: 20), // Add padding at the bottom
-                        ],
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

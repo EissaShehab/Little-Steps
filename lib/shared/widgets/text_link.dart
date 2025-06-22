@@ -29,11 +29,12 @@ class TextLink extends StatelessWidget {
           onTap: onTap,
           child: Text(
             linkText,
-            style: linkStyle ?? const TextStyle(
-              color: Colors.blueAccent,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
+            style: linkStyle ??
+                const TextStyle(
+                  color: Colors.blueAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
             semanticsLabel: semanticLabel,
           ),
         ),

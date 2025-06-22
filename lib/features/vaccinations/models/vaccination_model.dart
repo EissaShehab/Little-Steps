@@ -1,31 +1,54 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Vaccination {
-  final String name;
-  final String nameAr;
-  final String age;
-  final String ageAr;
-  final bool mandatory;
-  final String status;
-  final String adminType;
-  final List<String> conditions;
-  final List<String> conditionsAr;
-  final String description;
-  final String descriptionAr;
+  final String _name;
+  final String _nameAr;
+  final String _age;
+  final String _ageAr;
+  final bool _mandatory;
+  final String _status;
+  final String _adminType;
+  final List<String> _conditions;
+  final List<String> _conditionsAr;
+  final String _description;
+  final String _descriptionAr;
 
   Vaccination({
-    required this.name,
-    required this.nameAr,
-    required this.age,
-    required this.ageAr,
-    required this.mandatory,
-    required this.status,
-    required this.adminType,
-    required this.conditions,
-    required this.conditionsAr,
-    required this.description,
-    required this.descriptionAr,
-  });
+    required String name,
+    required String nameAr,
+    required String age,
+    required String ageAr,
+    required bool mandatory,
+    required String status,
+    required String adminType,
+    required List<String> conditions,
+    required List<String> conditionsAr,
+    required String description,
+    required String descriptionAr,
+  })  : _name = name,
+        _nameAr = nameAr,
+        _age = age,
+        _ageAr = ageAr,
+        _mandatory = mandatory,
+        _status = status,
+        _adminType = adminType,
+        _conditions = conditions,
+        _conditionsAr = conditionsAr,
+        _description = description,
+        _descriptionAr = descriptionAr;
+
+  // Getters
+  String get name => _name;
+  String get nameAr => _nameAr;
+  String get age => _age;
+  String get ageAr => _ageAr;
+  bool get mandatory => _mandatory;
+  String get status => _status;
+  String get adminType => _adminType;
+  List<String> get conditions => _conditions;
+  List<String> get conditionsAr => _conditionsAr;
+  String get description => _description;
+  String get descriptionAr => _descriptionAr;
 
   /// 🔹 **Convert `age` to days for scheduling vaccinations**
   int get ageInDays {
@@ -61,17 +84,17 @@ class Vaccination {
   /// 🔹 **Convert `Vaccination` Model to Firestore Data**
   Map<String, dynamic> toFirestore() {
     return {
-      'name': name,
-      'name_ar': nameAr,
-      'age': age,
-      'age_ar': ageAr,
-      'mandatory': mandatory,
-      'status': status,
-      'admin_type': adminType,
-      'conditions': conditions,
-      'conditions_ar': conditionsAr,
-      'description': description,
-      'description_ar': descriptionAr,
+      'name': _name,
+      'name_ar': _nameAr,
+      'age': _age,
+      'age_ar': _ageAr,
+      'mandatory': _mandatory,
+      'status': _status,
+      'admin_type': _adminType,
+      'conditions': _conditions,
+      'conditions_ar': _conditionsAr,
+      'description': _description,
+      'description_ar': _descriptionAr,
     };
   }
 }

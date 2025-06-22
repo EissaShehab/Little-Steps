@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/material.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:logger/logger.dart';
 
 final logger = Logger();
 
 class WHOService {
   static bool _isInitialized = false;
-  static Map<String, dynamic> _whoData = {};
+  static Map<String, Map<String, Map<int, Map<String, dynamic>>>> _whoData = {};
 
   static bool get isInitialized => _isInitialized;
 
@@ -16,7 +18,18 @@ class WHOService {
     try {
       final String jsonString =
           await rootBundle.loadString('assets/json/who_growth_data.json');
-      _whoData = jsonDecode(jsonString) as Map<String, dynamic>;
+      final rawData = jsonDecode(jsonString) as Map<String, dynamic>;
+      _whoData = rawData.map((key, value) => MapEntry(
+            key,
+            (value as Map).map((gender, data) => MapEntry(
+                  gender,
+                  Map<int, Map<String, dynamic>>.fromEntries(
+                      (data as List).map((e) => MapEntry(
+                            e['age'] as int,
+                            Map<String, dynamic>.from(e),
+                          ))),
+                )),
+          ));
       _isInitialized = true;
       logger.i("✅ WHO Growth Data Loaded Successfully!");
     } catch (e) {
@@ -26,6 +39,38 @@ class WHOService {
     }
   }
 
+  static Future<bool> initializeWithRetry({int maxRetries = 3}) async {
+    if (_isInitialized) return true;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final String jsonString =
+            await rootBundle.loadString('assets/json/who_growth_data.json');
+        final rawData = jsonDecode(jsonString) as Map<String, dynamic>;
+        _whoData = rawData.map((key, value) => MapEntry(
+              key,
+              (value as Map).map((gender, data) => MapEntry(
+                    gender,
+                    Map<int, Map<String, dynamic>>.fromEntries(
+                        (data as List).map((e) => MapEntry(
+                              e['age'] as int,
+                              Map<String, dynamic>.from(e),
+                            ))),
+                  )),
+            ));
+        _isInitialized = true;
+        logger.i("✅ WHO data loaded successfully on attempt $attempt");
+        return true;
+      } catch (e) {
+        logger.w("❌ WHO data load attempt $attempt failed: $e");
+        await Future.delayed(const Duration(seconds: 2)); // wait before retry
+      }
+    }
+
+    logger.e("❌ WHO data failed to initialize after $maxRetries attempts.");
+    return false;
+  }
+
   static double calculateZScore({
     required String measurementType,
     required String gender,
@@ -33,7 +78,7 @@ class WHOService {
     required double measurement,
   }) {
     if (!_isInitialized) {
-      logger.w("WHO data not initialized, initializing now...");
+      logger.e("WHO data not initialized");
       throw Exception('WHO growth data not initialized');
     }
     if (ageMonths < 0 || ageMonths > 60) {
@@ -43,15 +88,12 @@ class WHOService {
 
     try {
       final genderData = _whoData[measurementType]?[gender.toLowerCase()];
-      if (genderData == null || (genderData as List).isEmpty) {
+      if (genderData == null || genderData.isEmpty) {
         logger.w("No WHO data for $measurementType and gender $gender");
         return 0.0;
       }
 
-      final entry = (genderData as List<dynamic>).firstWhere(
-        (e) => e['age'] == ageMonths,
-        orElse: () => null,
-      );
+      final entry = genderData[ageMonths];
       if (entry == null) {
         logger.w("No WHO data for age $ageMonths months");
         return 0.0;
@@ -69,7 +111,7 @@ class WHOService {
       if (l == 0) {
         return (math.log(measurement / m)) / s;
       } else {
-        final double powerResult = (math.pow(measurement / m, l) as num).toDouble();
+        final double powerResult = (math.pow(measurement / m, l)).toDouble();
         return (powerResult - 1) / (l * s);
       }
     } catch (e) {
@@ -89,9 +131,14 @@ class WHOService {
     final double t = 1 / (1 + 0.3275911 * x.abs());
     final double result = 1 -
         t *
-            math.exp(-x * x - 1.26551223 + 1.00002368 * t + 0.37409196 * t * t +
-                0.09678418 * t * t * t - 0.18628806 * t * t * t * t +
-                0.27886807 * t * t * t * t * t - 1.13520398 * t * t * t * t * t * t);
+            math.exp(-x * x -
+                1.26551223 +
+                1.00002368 * t +
+                0.37409196 * t * t +
+                0.09678418 * t * t * t -
+                0.18628806 * t * t * t * t +
+                0.27886807 * t * t * t * t * t -
+                1.13520398 * t * t * t * t * t * t);
     return x >= 0 ? result : -result;
   }
 
@@ -103,29 +150,21 @@ class WHOService {
   }) {
     if (!_isInitialized) {
       logger.w("WHO data not initialized for percentile calculation");
-      return 0.0; // قيمة افتراضية بدلاً من رمي استثناء
+      return 0.0;
     }
     if (ageMonths < 0 || ageMonths > 60) return 0.0;
 
     try {
-      // تعديل المفتاح بناءً على chartType
-      String key;
-      if (chartType == "head") {
-        key = "head_circumference_for_age"; // استخدام المفتاح الصحيح لمحيط الرأس
-      } else {
-        key = "${chartType}_for_age"; // للوزن والطول
-      }
-
+      String key = chartType == "head"
+          ? "head_circumference_for_age"
+          : "${chartType}_for_age";
       final genderData = _whoData[key]?[gender.toLowerCase()];
-      if (genderData == null || (genderData as List).isEmpty) {
+      if (genderData == null || genderData.isEmpty) {
         logger.w("No WHO data for $key and gender $gender");
         return 0.0;
       }
 
-      final entry = (genderData as List<dynamic>).firstWhere(
-        (e) => e['age'] == ageMonths,
-        orElse: () => null,
-      );
+      final entry = genderData[ageMonths];
       if (entry == null) {
         logger.w("No WHO data for age $ageMonths months");
         return 0.0;
@@ -139,7 +178,7 @@ class WHOService {
       if (l == 0) {
         return m * math.exp(z * s);
       } else {
-        final double powerResult = (math.pow(1 + l * s * z, 1 / l) as num).toDouble();
+        final double powerResult = (math.pow(1 + l * s * z, 1 / l)).toDouble();
         return m * powerResult;
       }
     } catch (e) {
@@ -169,30 +208,51 @@ class WHOService {
     }
   }
 
-  static String interpretZScore(double zScore, String chartType) {
-    if (zScore.isNaN || zScore.isInfinite) return "غير معروف";
+  static String interpretZScore(
+      double zScore, String chartType, BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
 
     switch (chartType) {
       case 'weight':
-        if (zScore < -3) return "نقص وزن شديد";
-        if (zScore < -2) return "نقص وزن";
-        if (zScore <= 2) return "وزن طبيعي";
-        if (zScore <= 3) return "زيادة وزن";
-        return "سمنة";
+        if (zScore < -3) return tr.zScoreSeverelyUnderweight;
+        if (zScore < -2) return tr.zScoreUnderweight;
+        if (zScore <= 2) return tr.zScoreNormalWeight;
+        if (zScore <= 3) return tr.zScoreOverweight;
+        return tr.zScoreObese;
+
       case 'height':
-        if (zScore < -3) return "قصر قامة شديد";
-        if (zScore < -2) return "قصر قامة";
-        if (zScore <= 2) return "طول طبيعي";
-        if (zScore <= 3) return "طويل";
-        return "طول مفرط";
+        if (zScore < -3) return tr.zScoreSeverelyStunted;
+        if (zScore < -2) return tr.zScoreStunted;
+        return tr.zScoreNormalHeight;
+
       case 'head':
-        if (zScore < -3) return "صغر رأس شديد";
-        if (zScore < -2) return "صغر رأس";
-        if (zScore <= 2) return "حجم رأس طبيعي";
-        if (zScore <= 3) return "رأس كبير";
-        return "كبر رأس مفرط";
+        if (zScore < -2) return tr.zScoreMicrocephaly;
+        if (zScore <= 2) return tr.zScoreNormalHead;
+        return tr.zScoreMacrocephaly;
+
       default:
-        return "غير معروف";
+        return tr.status;
+    }
+  }
+
+  static String interpretZScoreForForm(
+      double zScore, String chartType, BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
+
+    switch (chartType) {
+      case 'weight':
+        if (zScore < -2) return tr.weightTooLow;
+        if (zScore > 2) return tr.weightTooHigh;
+        return tr.weightNormalRange;
+      case 'height':
+        if (zScore < -2) return tr.heightTooLow;
+        return tr.heightNormalRange;
+      case 'head':
+        if (zScore < -2) return tr.headTooSmall;
+        if (zScore > 2) return tr.headTooLarge;
+        return tr.headNormalRange;
+      default:
+        return tr.valueNormalRange;
     }
   }
 }

@@ -1,92 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
+import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
+import 'package:littlesteps/shared/widgets/gradient_background.dart';
+import 'package:littlesteps/shared/widgets/typography.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!; // الوصول للترجمة
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Privacy Policy',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF333333)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
+      appBar: CustomAppBar(
+        title: tr.privacyPolicy,
+        onBackPressed: () => Navigator.pop(context),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Privacy Policy Details',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'This is the body of the privacy policy. Here you can outline the purpose, rules, and regulations regarding data collection, storage, and usage in your app. Ensure the text is clear, concise, and informative for users to understand their rights and obligations.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Additional Information',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Here you can add additional information, such as third-party services used, user rights, or steps users can take to manage their data within the app.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Accept and Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+      body: Stack(
+        children: [
+          GradientBackground(
+            colors: [
+              Theme.of(context).colorScheme.primaryContainer,
+              Theme.of(context).colorScheme.secondaryContainer,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ),
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: FadeTransition(
+                opacity: AlwaysStoppedAnimation(1.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr.privacyPolicyDetails,
+                      style: AppTypography.headingStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      tr.privacyPolicyContent,
+                      style: AppTypography.bodyStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      tr.additionalInformation,
+                      style: AppTypography.subheadingStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      tr.additionalInfoContent,
+                      style: AppTypography.bodyStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 40,
+                            vertical: 16,
+                          ),
+                          elevation: 8,
+                          shadowColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.3),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          tr.acceptAndContinue,
+                          style: AppTypography.buttonStyle.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

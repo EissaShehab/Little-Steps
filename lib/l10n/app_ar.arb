@@ -1,0 +1,595 @@
+{
+  "@@locale": "ar",
+  "welcomeBack": "مرحبًا بعودتك",
+  "continueJourney": "واصل متابعة صحة طفلك",
+  "email": "البريد الإلكتروني",
+  "emailRequired": "البريد الإلكتروني مطلوب",
+  "invalidEmail": "يرجى إدخال بريد إلكتروني صالح",
+  "password": "كلمة المرور",
+  "passwordRequired": "كلمة المرور مطلوبة",
+  "passwordMinLength": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+  "passwordUppercase": "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل",
+  "passwordLowercase": "يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل",
+  "passwordNumber": "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل",
+  "passwordSpecial": "يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل",
+  "rememberMe": "تذكرني",
+  "forgotPassword": "نسيت كلمة المرور؟",
+  "newUser": "مستخدم جديد؟",
+  "createAccount": "إنشاء حساب",
+  "login": "تسجيل الدخول",
+  "createAccountTitle": "إنشاء حساب",
+  "startTracking": "ابدأ في تتبع رحلة صحة طفلك",
+  "fullName": "الاسم الكامل",
+  "fullNameRequired": "الاسم الكامل مطلوب",
+  "fullNameMinLength": "يجب أن يكون الاسم مكونًا من حرفين على الأقل",
+  "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+  "loginHere": "تسجيل الدخول من هنا",
+  "register": "تسجيل",
+  "splashTagline": "تابع رحلة صحة طفلك",
+  "hello": "مرحبًا",
+  "guest": "ضيف",
+  "selectChild": "اختر طفلًا",
+  "manageChildren": "إدارة الأطفال",
+  "noChildrenRegistered": "⚠️ لا يوجد أطفال مسجلين. يرجى إضافة طفل.",
+  "monitorGrowth": "راقب النمو",
+  "trackGrowthDescription": "تابع معالم نمو طفلك بدقة وعناية.",
+  "ensureHealth": "حافظ على الصحة",
+  "ensureHealthDescription": "حافظ على صحة طفلك بالتطعيمات ونصائح صحية.",
+  "home": "الرئيسية",
+  "notifications": "الإشعارات",
+  "profile": "الملف الشخصي",
+  "growth": "النمو",
+  "vaccines": "التطعيمات",
+  "healthTips": "نصائح صحية",
+  "nearestHospital": "أقرب مستشفى",
+  "healthTipsFor": "نصائح صحية لـ {name}",
+  "@healthTipsFor": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "healthRecords": "السجلات الصحية",
+  "healthRecordsFor": "السجلات الصحية لـ {name}",
+  "@healthRecordsFor": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "contact": "تواصل",
+  "noChildSelected": "لم يتم اختيار طفل",
+  "selectChildBeforeFeature": "يرجى اختيار طفل قبل الوصول إلى هذه الميزة.",
+  "ok": "موافق",
+  "enterGrowthMeasurements": "أدخل قياسات النمو",
+  "errorLoadingWHOData": "خطأ في تحميل بيانات WHO: {error}",
+  "@errorLoadingWHOData": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "measurementSavedSuccessfully": "تم حفظ القياس بنجاح",
+  "errorSavingMeasurement": "خطأ في حفظ القياس: {error}",
+  "@errorSavingMeasurement": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "enterAgeManually": "أدخل العمر يدويًا",
+  "ageMonths": "العمر (بالأشهر)",
+  "weightKg": "الوزن (كجم)",
+  "heightCm": "الطول (سم)",
+  "headCircumferenceCm": "محيط الرأس (سم)",
+  "latestMeasurement": "أحدث قياس",
+  "justNow": "الآن",
+  "date": "التاريخ",
+  "aDayAgo": "قبل يوم",
+  "daysAgo": "قبل {count} أيام",
+  "aWeekAgo": "قبل أسبوع",
+  "weeksAgo": "قبل {count} أسابيع",
+  "aMonthAgo": "قبل شهر",
+  "monthsAgo": "قبل {count} شهور",
+  "anHourAgo": "قبل ساعة",
+  "hoursAgo": "قبل {count} ساعات",
+  "saveMeasurement": "حفظ القياس",
+  "pleaseEnterAge": "يرجى إدخال العمر",
+  "ageRangeError": "يجب أن يكون العمر بين 0 و60 شهرًا",
+  "pleaseEnterField": "يرجى إدخال {field}",
+  "@pleaseEnterField": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "fieldRangeError": "يجب أن يكون {field} بين {min} و{max}",
+  "@fieldRangeError": {
+    "placeholders": {
+      "field": {},
+      "min": {},
+      "max": {}
+    }
+  },
+  "months": "أشهر",
+  "kg": "كجم",
+  "cm": "سم",
+  "weight": "الوزن",
+  "height": "الطول",
+  "headCircumference": "محيط الرأس",
+  "growthOverview": "نظرة عامة على النمو",
+  "noMeasurements": "لا توجد قياسات بعد. أضف واحدة للبدء.",
+  "addMeasurement": "إضافة قياس",
+  "heightVsAge": "الطول مقابل العمر (سم)",
+  "weightVsAge": "الوزن مقابل العمر (كجم)",
+  "headVsAge": "محيط الرأس مقابل العمر (سم)",
+  "status": "الحالة",
+  "moreDetails": "عرض المزيد",
+  "lessDetails": "إخفاء التفاصيل",
+  "mandatoryLabel": "إلزامي",
+  "yes": "نعم",
+  "no": "لا",
+  "conditions": "الشروط",
+  "dailyTip": "نصيحة يومية",
+  "source": "المصدر",
+  "noRelevantTips": "لا توجد نصائح ذات صلة حالياً.",
+  "noChildSelectedTips": "لم يتم اختيار طفل. يرجى اختيار طفل من الشاشة الرئيسية.",
+  "noTipsInCategory": "لا توجد نصائح متاحة لهذه الفئة.",
+  "allCategories": "كل الفئات",
+  "nutrition": "التغذية",
+  "vaccination": "التطعيم",
+  "sleep": "النوم",
+  "physicalActivity": "النشاط البدني",
+  "oralHealth": "صحة الفم",
+  "childDevelopment": "نمو الطفل",
+  "contactAuthorities": "تواصل مع الجهات المختصة",
+  "callNow": "اتصل الآن",
+  "emailNow": "أرسل بريدًا",
+  "phoneLabel": "الهاتف",
+  "emailLabel": "البريد الإلكتروني",
+  "emailLaunchFailed": "تعذر فتح تطبيق البريد. تم نسخ البريد الإلكتروني ({email}) إلى الحافظة.",
+  "@emailLaunchFailed": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "noHealthRecords": "لا توجد سجلات صحية بعد.\nاضغط على + لإضافة واحد!",
+  "attachment": "مرفق",
+  "download": "تحميل",
+  "delete": "حذف",
+  "addHealthRecord": "إضافة سجل صحي",
+  "titleExample": "العنوان (مثال: تطعيم)",
+  "description": "الوصف",
+  "noFileSelected": "لم يتم اختيار ملف",
+  "fileSelected": "الملف: {fileName}",
+  "@fileSelected": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "uploadFile": "رفع ملف",
+  "selectDate": "اختر التاريخ",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "pleaseFillAllFields": "يرجى ملء جميع الحقول",
+  "fileSizeExceedsLimit": "حجم الملف يتجاوز الحد الأقصى 10 ميجابايت",
+  "deleteRecord": "حذف السجل",
+  "confirmDeleteRecord": "هل أنت متأكد من حذف هذا السجل؟",
+  "downloadComplete": "اكتمل التحميل",
+  "open": "فتح",
+  "errorDownloadingFile": "خطأ أثناء التحميل: {error}",
+  "@errorDownloadingFile": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "editChildProfile": "تعديل ملف الطفل",
+  "childProfiles": "ملفات الأطفال",
+  "noChildrenRegisteredYet": "لا يوجد أطفال مسجلين بعد.",
+  "registeredChildren": "الأطفال المسجلين",
+  "dismiss": "إغلاق",
+  "deleteChild": "حذف الطفل",
+  "confirmDeleteChild": "هل أنت متأكد من حذف {name}؟",
+  "@confirmDeleteChild": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "removeChild": "إزالة الطفل",
+  "confirmRemoveChild": "هل أنت متأكد من إزالة هذا الطفل؟",
+  "remove": "إزالة",
+  "childIndex": "الطفل {index}",
+  "@childIndex": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "imageSelectionFailed": "فشل اختيار الصورة",
+  "takePhoto": "التقاط صورة",
+  "chooseFromGallery": "اختيار من المعرض",
+  "addPhoto": "إضافة صورة",
+  "changePhoto": "تغيير الصورة",
+  "enterChildName": "أدخل اسم الطفل",
+  "nationalID": "الرقم الوطني",
+  "enterChildNationalID": "أدخل الرقم الوطني  للطفل",
+  "nationalIDRequired": "الرقم القومي مطلوب",
+  "nationalIDLengthError": "يجب أن يكون الرقم القومي مكونًا من 10 أرقام بالضبط",
+  "dateOfBirth": "تاريخ الميلاد",
+  "selectChildBirthDate": "اختر تاريخ ميلاد الطفل",
+  "gender": "الجنس",
+  "relationship": "العلاقة",
+  "male": "ذكر",
+  "female": "أنثى",
+  "other": "آخر",
+  "parent": "والد",
+  "guardian": "وصي",
+  "fieldRequired": "{field} مطلوب",
+  "@fieldRequired": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "update": "تحديث",
+  "saveAllProfiles": "حفظ جميع الملفات",
+  "childProfileDeletedSuccessfully": "تم حذف ملف الطفل بنجاح!",
+  "failedToDeleteChild": "فشل في حذف الطفل: {error}",
+  "@failedToDeleteChild": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "childProfileUpdatedSuccessfully": "تم تحديث ملف الطفل بنجاح!",
+  "failedToUpdateProfile": "فشل في تحديث الملف: {error}",
+  "@failedToUpdateProfile": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "pleaseLoginToSaveProfiles": "يرجى تسجيل الدخول لحفظ الملفات.",
+  "childProfileSavedSuccessfully": "تم حفظ ملف الطفل بنجاح!",
+  "failedToSaveProfiles": "فشل في حفظ الملفات: {error}",
+  "@failedToSaveProfiles": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authenticationRequired": "التسجيل مطلوب",
+  "pleaseFillAllRequiredFields": "يرجى ملء جميع الحقول المطلوبة",
+  "pleaseSelectChild": "يرجى اختيار طفل لعرض ملفه الشخصي.",
+  "noChildrenAddProfile": "لا يوجد أطفال مسجلين. أضف ملف طفل.",
+  "notAvailable": "غير متوفر",
+  "childID": "المعرف",
+  "idCopiedToClipboard": "تم نسخ المعرف إلى الحافظة",
+  "settings": "الإعدادات",
+  "darkMode": "الوضع الداكن",
+  "language": "اللغة",
+  "changePassword": "تغيير كلمة المرور",
+  "privacyPolicy": "سياسة الخصوصية",
+  "about": "حول",
+  "logout": "تسجيل الخروج",
+  "logoutConfirmTitle": "تسجيل الخروج",
+  "logoutConfirmMessage": "هل أنت متأكد من تسجيل الخروج؟",
+  "loggingOut": "جارٍ تسجيل الخروج...",
+  "errorLoggingOut": "خطأ أثناء تسجيل الخروج: {error}",
+  "@errorLoggingOut": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "aboutLittleSteps": "حول LittleSteps",
+  "aboutContent": "يهدف LittleSteps إلى رقمنة وتبسيط إدارة رحلة صحة طفلك، بما في ذلك تتبع النمو، التطعيمات، والنصائح الصحية. يحول إدخالات المستخدم إلى سجلات صحية منظمة بناءً على قوالب محددة مسبقًا لكل فئة صحية.",
+  "contactInformation": "معلومات التواصل",
+  "websiteLabel": "الموقع: github/EissaShehab",
+  "updateCredentials": "تحديث بياناتك",
+  "secureAccountMessage": "أمّن حسابك عن طريق تغيير كلمة المرور بانتظام.",
+  "currentPasswordLabel": "كلمة المرور الحالية",
+  "newPasswordLabel": "كلمة المرور الجديدة",
+  "confirmPasswordLabel": "تأكيد كلمة المرور",
+  "pleaseEnterCurrentPassword": "يرجى إدخال كلمة المرور الحالية",
+  "pleaseEnterNewPassword": "يرجى إدخال كلمة المرور الجديدة",
+  "passwordMinLength6": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+  "pleaseConfirmPassword": "يرجى تأكيد كلمة المرور الجديدة",
+  "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
+  "passwordChangedSuccessfully": "تم تغيير كلمة المرور بنجاح",
+  "errorChangingPassword": "خطأ أثناء تغيير كلمة المرور: {error}",
+  "@errorChangingPassword": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "privacyPolicyAgreement": "بتغيير كلمة المرور، فإنك توافق على سياسة الخصوصية وشروط الاستخدام الخاصة بنا",
+  "privacyPolicyDetails": "تفاصيل سياسة الخصوصية",
+  "privacyPolicyContent": "هذا هو نص سياسة الخصوصية. هنا يمكنك توضيح الغرض، القواعد، واللوائح المتعلقة بجمع البيانات، تخزينها، واستخدامها في تطبيقك. تأكد أن النص واضح، موجز، ومفيد للمستخدمين لفهم حقوقهم وواجباتهم.",
+  "additionalInformation": "معلومات إضافية",
+  "additionalInfoContent": "هنا يمكنك إضافة معلومات إضافية، مثل الخدمات الخارجية المستخدمة، حقوق المستخدم، أو الخطوات التي يمكن للمستخدمين اتخاذها لإدارة بياناتهم داخل التطبيق.",
+  "acceptAndContinue": "قبول ومتابعة",
+  "statusUpcoming": "قادم",
+  "statusCompleted": "مكتمل",
+  "statusMissed": "فائت",
+  "notificationsTitle": "الإشعارات",
+  "noNotifications": "لا توجد إشعارات بعد.",
+  "notificationDeleted": "تم حذف الإشعار",
+  "error": "خطأ",
+  "markAsTaken": "تم إعطاؤه",
+  "age": "العمر",
+  "vaccinationSchedule": "جدول المطاعيم",
+  "noVaccinationsFound": "لا توجد مطاعيم متوفرة",
+  "emergencySection": "حالات الطوارئ",
+  "nearestPharmacy": "أقرب صيدلية",
+  "contactNurse": "تواصل مع ممرضة",
+  "noPharmaciesFound": "🚫 لم يتم العثور على صيدليات قريبة حاليًا.",
+  "pharmacyDistance": "المسافة: {distance} كم",
+  "refresh": "تحديث",
+  "temperatureNow": "درجة الحرارة الآن",
+  "weatherCondition": "حالة الطقس",
+  "weatherClear": "صحو",
+  "weatherPartlyCloudy": "غائم جزئيًا",
+  "weatherFog": "ضباب",
+  "weatherDrizzle": "رذاذ",
+  "weatherRain": "أمطار",
+  "weatherSnow": "ثلوج",
+  "weatherThunder": "عاصفة رعدية",
+  "weatherUnknown": "طقس غير معروف",
+  "weatherAlertColdInfant": "❄️ الجو شديد البرودة، يُنصح بعدم إخراج الأطفال الرضع.",
+  "weatherAlertColdGeneral": "⚠️ الطقس بارد جدًا، تأكد من تدفئة طفلك جيدًا.",
+  "weatherAlertHotToddler": "🌡️ حرارة مرتفعة! تجنب تعريض طفلك الصغير للشمس المباشرة.",
+  "weatherAlertHotGeneral": "☀️ الطقس حار جدًا، تأكد من أن طفلك مرتاح ومرطّب.",
+  "weatherAlertWarmForInfant": "🔥 الجو دافئ جدًا وقد لا يُناسب الأطفال دون 6 شهور.",
+  "weatherFetchError": "فشل في تحميل بيانات الطقس.",
+  "weatherNotification": "تنبيه طقس",
+  "vaccineNotification": "تذكير مطعوم",
+  "symptomsScreenTitle": "🩺 اختيار الأعراض",
+  "searchHint": "ابحث عن عرض...",
+  "symptomNotFoundPrompt": "✨ عرض غير موجود؟ أضفه هنا:",
+  "addSymptomHint": "اكتب عرض جديد...",
+  "analyzeSymptomsButton": "تحليل الأعراض",
+  "selectSeverityTooltip": "تحديد الشدة",
+  "selectChildFirstMessage": "يرجى اختيار الطفل أولاً.",
+  "analysisFailedMessage": "فشل التحليل: {error}",
+  "@analysisFailedMessage": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "severityLow": "خفيف",
+  "severityMedium": "متوسط",
+  "severityHigh": "شديد",
+  "symptomCategoryGeneral": "عام",
+  "symptomCategoryRespiratory": "تنفسي",
+  "symptomCategoryENT": "أنف وأذن وحنجرة",
+  "symptomCategoryDigestive": "الجهاز الهضمي",
+  "symptomCategorySkin": "الجلد",
+  "symptomCategoryOther": "أخرى",
+  "symptomFever": "حمى",
+  "symptomFatigue": "تعب",
+  "symptomHeadache": "صداع",
+  "symptomCough": "سعال",
+  "symptomDryCough": "سعال جاف",
+  "symptomWheezing": "صفير",
+  "symptomShortnessOfBreath": "ضيق تنفس",
+  "symptomSoreThroat": "التهاب حلق",
+  "symptomRunnyNose": "سيلان أنف",
+  "symptomSneezing": "عطاس",
+  "symptomEarPain": "ألم أذن",
+  "symptomEarTugging": "",
+  "symptomVomiting": "تقيؤ",
+  "symptomDiarrhea": "إسهال",
+  "symptomAbdominalCramps": "تقلصات في البطن",
+  "symptomCrackedSkin": "تشققات جلدية",
+  "symptomChestPain": "ألم في الصدر",
+  "symptomBodyAches": "آلام بالجسم",
+  "severityVeryHigh": "شديد جدًا",
+  "predictionResultTitle": "نتيجة التحليل",
+  "mostLikelyDisease": "المرض الأكثر احتمالًا:",
+  "detailsTitle": "تفاصيل النتائج:",
+  "disclaimerNote": "⚠ هذه النتائج مقدمة كمساعدة ولا تغني عن استشارة الطبيب المختص.",
+  "newAnalysis": "تحليل جديد",
+  "diseaseAsthma": "الربو",
+  "diseaseBronchiolitis": "التهاب القصيبات الهوائية",
+  "diseaseBronchitis": "التهاب الشعب الهوائية",
+  "diseaseChickenpox": "الجدري المائي",
+  "diseaseCommonCold": "نزلة برد",
+  "diseaseEczema": "الأكزيما",
+  "diseaseFebrileSeizures": "نوبات الحمى",
+  "diseaseFlu": "الإنفلونزا",
+  "diseaseHeatStroke": "ضربة شمس",
+  "diseaseOtitisMedia": "التهاب الأذن الوسطى",
+  "diseasePneumonia": "الالتهاب الرئوي",
+  "diseaseRSV": "فيروس RSV",
+  "diseaseScarletFever": "الحمى القرمزية",
+  "diseaseSinusInfection": "التهاب الجيوب الأنفية",
+  "diseaseStomachFlu": "أنفلونزا المعدة",
+  "diseaseTonsillitis": "التهاب اللوزتين",
+  "diseaseViralSoreThroat": "التهاب الحلق الفيروسي",
+  "diseaseViralSummerFever": "حمى صيفية فيروسية",
+  "resultDetails": "تفاصيل النتائج",
+  "resultDisclaimer": "⚠ هذه النتائج مقدمة كمساعدة ولا تغني عن استشارة الطبيب المختص.",
+  "symptomChills": "قشعريرة",
+  "symptomConfusion": "ارتباك",
+  "symptomDizziness": "دوخة",
+  "symptomFainting": "إغماء",
+  "symptomSweating": "تعرق",
+  "symptomSuddenOnset": "ظهور مفاجئ",
+  "symptomChestTightness": "ضيق في الصدر",
+  "symptomChestDiscomfort": "انزعاج صدري",
+  "symptomDryRespiratoryPattern": "نمط تنفسي جاف",
+  "symptomFacialPain": "ألم في الوجه",
+  "symptomSinusPressure": "ضغط الجيوب الأنفية",
+  "symptomStomachPain": "ألم المعدة",
+  "symptomSkinPeeling": "تقشر الجلد",
+  "symptomConvulsions": "تشنجات",
+  "symptomStiffNeck": "تيبس الرقبة",
+  "symptomFebrilePattern": "نمط حمى",
+  "symptomBluishSkin": "ازرقاق الجلد",
+  "symptomBulgingFontanelle": "انتفاخ اليافوخ",
+  "symptomAgeUnderTwo": "العمر أقل من سنتين",
+  "symptomAllergyTrigger": "مسبب تحسس",
+  "symptomScarletFever": "الحمى القرمزية",
+  "symptomThroatCluster": "مجموعة أعراض الحلق",
+  "symptomStomachFlu": "أنفلونزا المعدة",
+  "symptomCategoryNeurological": "الأعصاب",
+  "symptomCategoryCardiac": "القلب",
+  "zScoreSeverelyUnderweight": "نقص حاد في الوزن",
+  "zScoreUnderweight": "نقص في الوزن",
+  "zScoreNormalWeight": "وزن طبيعي",
+  "zScoreOverweight": "زيادة في الوزن",
+  "zScoreObese": "سُمنة",
+  "zScoreSeverelyStunted": "تأخر حاد في النمو",
+  "zScoreStunted": "تأخر في النمو",
+  "zScoreNormalHeight": "طول طبيعي",
+  "zScoreMicrocephaly": "صغر الرأس",
+  "zScoreNormalHead": "محيط رأس طبيعي",
+  "zScoreMacrocephaly": "تضخم الرأس",
+  "zScoreNormalKeyword": "طبيعي",
+  "zScoreMildKeyword": "بسيط",
+  "chartLabelValue": "القيمة",
+  "chartLabelAge": "العمر",
+  "chartLabelStatus": "الحالة",
+  "percentileWeight": "الوزن ضمن أعلى {percentile}% من أقرانه",
+  "percentileHeight": "الطول ضمن أعلى {percentile}% من أقرانه",
+  "percentileHead": "محيط الرأس ضمن أعلى {percentile}% من أقرانه",
+  "helpful": "مفيد",
+  "notHelpful": "غير مفيد",
+  "searchTips": "ابحث في النصائح...",
+  "within": "ضمن",
+  "tryAnotherSearch": "جرب بحثًا آخر",
+  "reset": "إعادة تعيين",
+  "noDailyTip": "لا توجد نصيحة صحية متاحة لليوم.",
+  "thankYouFeedback": "شكرًا لملاحظتك!",
+  "errorOccurred": "حدث خطأ. الرجاء المحاولة لاحقًا.",
+  "unhelpful": "غير مفيد",
+  "retry": "إعادة المحاولة",
+  "authorityRenadName": "رناد العجارمة",
+  "authorityRenadSpecialty": "أخصائية أطفال",
+  "authorityRenadHospital": "مستشفى الاستقلال",
+  "authorityRahafName": "رهف جديتاوي",
+  "authorityRahafSpecialty": "ممرضة أطفال (المستوى الثاني)",
+  "authorityRahafHospital": "مستشفى الاستقلال",
+  "authorityReefName": "ريف المجالي",
+  "authorityReefSpecialty": "ممرضة أطفال (المستوى الثالث)",
+  "authorityReefHospital": "مستشفى الاستقلال",
+  "authorityLeenName": "لين هندواي",
+  "authorityLeenSpecialty": "ممرضة أطفال (المستوى الثالث)",
+  "authorityLeenHospital": "مستشفى الاستقلال",
+  "authoritySajoudName": "سجود الزعانة",
+  "authoritySajoudSpecialty": "ممرضة أطفال (المستوى الثاني)",
+  "authoritySajoudHospital": "مستشفى الاستقلال",
+  "birthDateCannotBeFuture": "تاريخ الميلاد لا يمكن أن يكون في المستقبل",
+  "@birthDateCannotBeFuture": {},
+  "dateOfBirthRequired": "تاريخ الميلاد مطلوب",
+  "@dateOfBirthRequired": {},
+  "birthDateMustBeWithinFiveYears": "تاريخ الميلاد يجب أن يكون ضمن الخمس سنوات الأخيرة",
+  "@birthDateMustBeWithinFiveYears": {},
+  "nearestHospitalsTitle": "أقرب مستشفى",
+  "locationRefreshTooltip": "تحديث الموقع",
+  "locationErrorMessage": "⚠️ تعذر الحصول على الموقع. تأكد من تفعيل GPS.",
+  "locationLoading": "جارٍ تحديد الموقع الحالي...",
+  "currentLocationLabel": "📍 أنت الآن في: {address}",
+  "noHospitalsFound": "🚫 لم يتم العثور على مستشفيات قريبة حاليًا.",
+  "hospitalDistance": "المسافة: {distance} كم",
+  "openInMaps": "افتح في الخرائط",
+  "startNavigation": "ابدأ التوجيه",
+  "openMapError": "❌ لا يمكن فتح تطبيق الخرائط.",
+  "startNavError": "❌ لا يمكن بدء التوجيه.",
+  "nearestPharmaciesTitle": "أقرب صيدلية",
+  "deleteAll": "حذف الكل",
+  "confirmDeleteAll": "تأكيد الحذف الكلي",
+  "deleteAllNotificationsMessage": "هل أنت متأكد من حذف جميع الإشعارات؟",
+  "allNotificationsDeleted": "تم حذف جميع الإشعارات.",
+  "confirmDelete": "تأكيد الحذف",
+  "deleteNotificationMessage": "هل أنت متأكد من حذف هذا الإشعار؟",
+  "pleaseLogin": "يرجى تسجيل الدخول لعرض الإشعارات.",
+  "noTitle": "لا يوجد عنوان",
+  "unknownChild": "طفل غير معروف",
+  "noContent": "لا يوجد محتوى",
+  "symptoms": "الطبيب الرقمي",
+  "duplicateNationalIdError": "الرقم الوطني مستخدم لطفل آخر بالفعل.",
+  "@symptoms": {
+    "description": "العنوان المستخدم لميزة الطبيب الرقمي"
+  },
+  "deleteMeasurement": "حذف القياس",
+  "confirmDeleteMeasurement": "هل أنت متأكد أنك تريد حذف هذا القياس؟",
+  "measurementDeleted": "تم حذف القياس بنجاح.",
+  "errorDeletingMeasurement": "حدث خطأ أثناء حذف القياس: {error}",
+  "undo": "تراجع",
+  "pleaseLoginToExport": "يرجى تسجيل الدخول لتصدير التقرير",
+  "growthReportExportedToHealthRecords": "تم تصدير تقرير النمو إلى السجلات الصحية بنجاح",
+  "errorExportingToHealthRecords": "خطأ أثناء التصدير إلى السجلات الصحية: {error}",
+  "errorExportingToHealthRecords_error": "رسالة الخطأ",
+  "exportToHealthRecords": "تصدير إلى السجلات الصحية",
+  "symptom_analysis_report": "تقرير تحليل الأعراض",
+  "child_name": "اسم الطفل",
+  "likely_disease": "المرض المحتمل",
+  "symptom_details": "تفاصيل الأعراض",
+  "symptom": "العرض",
+  "severity": "الشدة",
+  "disease_probabilities": "احتمالات الأمراض",
+  "disease": "المرض",
+  "probability": "الاحتمال",
+  "health_record_title": "تحليل الأعراض",
+  "health_record_description": "نتيجة التحليل بناءً على الأعراض محفوظة بصيغة PDF",
+  "file_name": "symptom_report.pdf",
+  "severity_mild": "خفيفة",
+  "severity_moderate": "متوسطة",
+  "severity_severe": "مرتفعة",
+  "severity_very_severe": "مرتفعة جداً",
+  "severity_unknown": "غير معروف",
+  "child": "الطفل",
+  "recordDeleted": "تم حذف السجل",
+  "recordAdded": "تم إضافة السجل",
+  "locationPermissionDenied": "تم رفض إذن الموقع. يرجى تفعيله لعرض حالة الطقس.",
+  "weightTooLow": "الوزن منخفض بشكل غير طبيعي للعمر.",
+  "weightTooHigh": "الوزن مرتفع بشكل غير طبيعي للعمر.",
+  "weightNormalRange": "الوزن ضمن النطاق الطبيعي.",
+  "heightTooLow": "الطول أقل من الطبيعي للعمر.",
+  "heightNormalRange": "الطول ضمن النطاق الطبيعي.",
+  "headTooSmall": "محيط الرأس صغير بشكل غير طبيعي.",
+  "headTooLarge": "محيط الرأس كبير بشكل غير طبيعي.",
+  "headNormalRange": "محيط الرأس ضمن النطاق الطبيعي.",
+  "valueNormalRange": "القيمة ضمن النطاق الطبيعي.",
+  "invalidMeasurementOutlier": "القيمة المدخلة غير منطقية وقد تكون خاطئة. يرجى التأكد من قياسات الطفل.",
+  "symptomHighBodyTemperature": "ارتفاع درجة حرارة الجسم",
+  "symptomHighFever": "حمى شديدة",
+  "symptomIrritability": "سهولة التهيج",
+  "symptomItchySkin": "حكة في الجلد",
+  "symptomLossOfAppetite": "فقدان الشهية",
+  "symptomMildFever": "حمى خفيفة",
+  "symptomMouthSores": "تقرحات الفم",
+  "symptomNasalCongestion": "احتقان الأنف",
+  "symptomNausea": "غثيان",
+  "symptomRedPatches": "بقع حمراء",
+  "symptomRedRash": "طفح جلدي أحمر",
+  "symptomRedThroat": "احمرار الحلق",
+  "symptomRSVPattern": "نمط عدوى RSV",
+  "symptomSevereFatigue": "تعب شديد",
+  "symptomDifficultySwallowing": "صعوبة في البلع",
+  "symptomSwollenTongue": "تورم اللسان",
+  "symptomSwollenTonsils": "تورم اللوزتين",
+  "symptomDrySkin": "جفاف الجلد",
+  "selectChildFirst": "اختر الطفل أولاً",
+  "loading": "جاري التحميل...",
+  "@loading": {
+    "description": "نص مؤشر التحميل"
+  },
+  "minSymptomsWarning": "الرجاء اختيار 4 أعراض على الأقل.",
+  "maxSymptomsWarning": "يمكنك اختيار 10 أعراض كحد أقصى فقط.",
+  "nameTooShort": "الاسم يجب أن يتكون من 4 أحرف على الأقل",
+  "nameTooLong": "الاسم لا يمكن أن يتجاوز 30 حرفًا",
+  "invalidNameCharacters": "الاسم يمكن أن يحتوي فقط على أحرف عربية أو إنجليزية، مسافات، أو واصلة",
+  "childWeather": "تنبيهات الطقس الذكية",
+  "residenceID": "رقم الإقامة",
+  "identifierType": "نوع المعرّف",
+  "enterChildResidenceID": "أدخل رقم إقامة الطفل",
+  "identifierLengthError": "يجب أن يكون المعرّف مكونًا من 10 أرقام",
+  "@residenceID": {
+    "description": "Label for residence ID field",
+    "type": "text"
+  },
+  "@identifierType": {
+    "description": "Label for identifier type dropdown",
+    "type": "text"
+  },
+  "@enterChildResidenceID": {
+    "description": "Placeholder for residence ID input",
+    "type": "text"
+  },
+  "@identifierLengthError": {
+    "description": "Error message for invalid identifier length",
+    "type": "text"
+  }
+}

@@ -11,7 +11,8 @@ class AuthState {
 
   AuthState({this.user, this.isLoading = false, this.error});
 
-  factory AuthState.initial() => AuthState(user: null, isLoading: false, error: null);
+  factory AuthState.initial() =>
+      AuthState(user: null, isLoading: false, error: null);
 
   AuthState copyWith({User? user, bool? isLoading, String? error}) {
     return AuthState(
@@ -83,7 +84,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
       await _authService.changePassword(currentPassword, newPassword);
@@ -103,7 +105,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
   return AuthNotifier(authService);
 });

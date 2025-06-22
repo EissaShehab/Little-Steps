@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart'; // Add this import
+import 'package:go_router/go_router.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:littlesteps/providers/theme_provider.dart';
 import 'package:littlesteps/features/auth/providers/auth_provider.dart';
 import 'package:littlesteps/routes/app_routes.dart';
-import 'package:littlesteps/features/settings/presentation/about_screen.dart';
-import 'package:littlesteps/features/settings/presentation/change_password_screen.dart';
-import 'package:littlesteps/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
 import 'package:logger/logger.dart';
 
 final logger = Logger();
+
+// Provider لإدارة اللغة
+final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tr = AppLocalizations.of(context)!;
     final themeMode = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final isDarkMode = themeMode == AppThemeMode.dark;
+    final currentLocale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Settings',
-        onBackPressed: () => context.pop(), // Use GoRouter to go back
+        title: tr.settings,
+        onBackPressed: () => context.pop(),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -42,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
                           size: 24),
                       const SizedBox(width: 12),
                       Text(
-                        "Dark Mode",
+                        tr.darkMode,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -72,25 +75,26 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSettingsOption(
                   context,
                   Icons.language,
-                  "Language",
+                  tr.language,
                   onTap: () {
                     logger.i('Language settings clicked');
+                    _showLanguageDialog(context, ref);
                   },
                 ),
                 _buildSettingsOption(
                   context,
                   Icons.lock,
-                  "Change Password",
+                  tr.changePassword,
                   onTap: () {
-                    context.push(AppRoutes.changePassword); // Use GoRouter to push
+                    context.push(AppRoutes.changePassword);
                   },
                 ),
                 _buildSettingsOption(
                   context,
                   Icons.lock_outline,
-                  "Privacy Policy",
+                  tr.privacyPolicy,
                   onTap: () {
-                    context.push(AppRoutes.privacyPolicy); // Use GoRouter to push
+                    context.push(AppRoutes.privacyPolicy);
                   },
                 ),
               ],
@@ -104,9 +108,9 @@ class SettingsScreen extends ConsumerWidget {
               child: _buildSettingsOption(
                 context,
                 Icons.info,
-                "About",
+                tr.about,
                 onTap: () {
-                  context.push(AppRoutes.about); // Use GoRouter to push
+                  context.push(AppRoutes.about);
                 },
               ),
             ),
@@ -119,24 +123,24 @@ class SettingsScreen extends ConsumerWidget {
               child: _buildSettingsOption(
                 context,
                 Icons.logout,
-                "Logout",
+                tr.logout,
                 textColor: Colors.red,
                 iconColor: Colors.red,
                 onTap: () async {
                   final shouldLogout = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Log Out'),
-                      content: const Text('Are you sure you want to log out?'),
+                      title: Text(tr.logoutConfirmTitle),
+                      content: Text(tr.logoutConfirmMessage),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          child: Text(tr.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Log Out',
-                              style: TextStyle(color: Colors.red)),
+                          child: Text(tr.logout,
+                              style: const TextStyle(color: Colors.red)),
                         ),
                       ],
                     ),
@@ -144,17 +148,19 @@ class SettingsScreen extends ConsumerWidget {
                   if (shouldLogout == true && context.mounted) {
                     try {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Logging out...')),
+                        SnackBar(content: Text(tr.loggingOut)),
                       );
                       await ref.read(authNotifierProvider.notifier).logout();
                       if (context.mounted) {
-                        logger.i("✅ User logged out successfully, navigating to login");
-                        context.go(AppRoutes.login); // Use GoRouter to replace stack
+                        logger.i(
+                            "✅ User logged out successfully, navigating to login");
+                        context.go(AppRoutes.login);
                       }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error logging out: $e')),
+                          SnackBar(
+                              content: Text(tr.errorLoggingOut(e.toString()))),
                         );
                       }
                     }
@@ -261,6 +267,50 @@ class SettingsScreen extends ConsumerWidget {
                   child: item,
                 ))
             .toList(),
+      ),
+    );
+  }
+
+  /// **Show Language Selection Dialog**
+  void _showLanguageDialog(BuildContext context, WidgetRef ref) {
+    final tr = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tr.language),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<Locale>(
+              title: const Text('English'),
+              value: const Locale('en'),
+              groupValue: ref.watch(localeProvider),
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(localeProvider.notifier).state = value;
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            RadioListTile<Locale>(
+              title: const Text('العربية'),
+              value: const Locale('ar'),
+              groupValue: ref.watch(localeProvider),
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(localeProvider.notifier).state = value;
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr.cancel),
+          ),
+        ],
       ),
     );
   }
