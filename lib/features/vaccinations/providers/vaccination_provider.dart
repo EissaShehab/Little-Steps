@@ -6,7 +6,8 @@ import 'package:logger/logger.dart';
 
 final logger = Logger();
 
-final vaccinationProvider = StreamProvider.autoDispose.family<List<Vaccination>, String>((ref, childId) {
+final vaccinationProvider = StreamProvider.autoDispose
+    .family<List<Vaccination>, String>((ref, childId) {
   final userId = FirebaseAuth.instance.currentUser?.uid;
   if (userId == null) return const Stream.empty();
 
@@ -20,10 +21,8 @@ final vaccinationProvider = StreamProvider.autoDispose.family<List<Vaccination>,
       .collection('vaccinations')
       .snapshots()
       .handleError((error) {
-        logger.e("❌ Error fetching vaccinations for child $childId: $error");
-        return []; // Graceful fallback
-      })
-      .map((snapshot) => snapshot.docs
-          .map((doc) => Vaccination.fromFirestore(doc))
-          .toList());
+    logger.e("❌ Error fetching vaccinations for child $childId: $error");
+    return []; // Graceful fallback
+  }).map((snapshot) =>
+          snapshot.docs.map((doc) => Vaccination.fromFirestore(doc)).toList());
 });

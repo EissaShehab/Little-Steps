@@ -4,7 +4,8 @@ import 'package:littlesteps/features/vaccinations/providers/vaccination_provider
     hide logger;
 import 'package:littlesteps/features/vaccinations/data/vaccination_service.dart';
 import 'package:littlesteps/features/child_profile/models/child_model.dart';
-import 'package:littlesteps/shared/widgets/vaccination_card.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
+import 'package:littlesteps/shared/widgets/generic_card.dart';
 import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
 import 'package:littlesteps/shared/widgets/typography.dart';
@@ -63,15 +64,28 @@ class _VaccinationScreenState extends ConsumerState<VaccinationScreen>
     }
   }
 
+  int _parseAgeToMonths(String age) {
+    if (age.toLowerCase() == 'at birth') return 0;
+    if (age.toLowerCase() == 'عند الولادة') return 0; 
+    if (age.contains('months') || age.contains('شهور')) {
+      return int.tryParse(age.split(' ')[0]) ?? 0;
+    }
+    if (age.contains('years'))
+      return (int.tryParse(age.split(' ')[0]) ?? 0) * 12;
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final vaccinations = ref.watch(vaccinationProvider(widget.child.id));
-
+    final currentLocale =
+        Localizations.localeOf(context).languageCode; 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Vaccination Schedule",
+        title: tr.vaccinationSchedule,
       ),
       body: GradientBackground(
         showPattern: false,
@@ -80,7 +94,7 @@ class _VaccinationScreenState extends ConsumerState<VaccinationScreen>
             if (vaccines.isEmpty) {
               return Center(
                 child: Text(
-                  "No vaccinations found for this child.",
+                  tr.noVaccinationsFound,
                   style: AppTypography.bodyStyle.copyWith(
                     color:
                         isDark ? Colors.white70 : colorScheme.onSurfaceVariant,
@@ -88,21 +102,63 @@ class _VaccinationScreenState extends ConsumerState<VaccinationScreen>
                 ),
               );
             }
+
+            final sortedVaccines = vaccines.toList()
+              ..sort((a, b) {
+                final ageA =
+                    _parseAgeToMonths(currentLocale == 'ar' ? a.ageAr : a.age);
+                final ageB =
+                    _parseAgeToMonths(currentLocale == 'ar' ? b.ageAr : b.age);
+                return ageA.compareTo(ageB);
+              });
+
             return ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: vaccines.length,
+              itemCount: sortedVaccines.length,
               itemBuilder: (context, index) {
+                final vaccine = sortedVaccines[index];
+                // اختيار النصوص بناءً على اللغة الحالية
+                final displayName =
+                    currentLocale == 'ar' ? vaccine.nameAr : vaccine.name;
+                final displayAge =
+                    currentLocale == 'ar' ? vaccine.ageAr : vaccine.age;
+                final displayDescription = currentLocale == 'ar'
+                    ? vaccine.descriptionAr
+                    : vaccine.description;
+                final displayConditions = currentLocale == 'ar'
+                    ? vaccine.conditionsAr
+                    : vaccine.conditions;
+
                 return AnimatedBuilder(
                   animation: _fadeAnimation,
                   builder: (context, child) => Opacity(
                     opacity: _fadeAnimation.value,
-                    child: VaccinationCard(
-                      vaccine: vaccines[index],
-                      onMarkCompleted: () {
+                    child: GenericCard(
+                      title: displayName,
+                      subtitle: "${tr.age}: $displayAge",
+                      description: displayDescription,
+                      icon: vaccine.adminType == "injection"
+                          ? Icons.vaccines
+                          : Icons.medication_liquid,
+                      status: vaccine.status,
+                      statusColor: vaccine.status == "completed"
+                          ? Colors.greenAccent
+                          : vaccine.status == "missed"
+                              ? colorScheme.error
+                              : colorScheme.secondary,
+                      isExpandable: true,
+                      hasAction: vaccine.status != "completed",
+                      actionLabel: tr.markAsTaken,
+                      actionValue: vaccine.status == "completed",
+                      onActionTap: () {
                         _vaccinationService.updateVaccineStatus(
-                            widget.child.id, vaccines[index].name, 'completed');
+                          widget.child.id,
+                          vaccine.name,
+                          'completed',
+                        );
                       },
-                      child: widget.child,
+                      conditions: displayConditions,
+                      mandatory: vaccine.mandatory,
                     ),
                   ),
                 );
@@ -114,7 +170,7 @@ class _VaccinationScreenState extends ConsumerState<VaccinationScreen>
           ),
           error: (e, _) => Center(
             child: Text(
-              "Error: $e",
+              "${tr.error}: $e",
               style: AppTypography.bodyStyle.copyWith(
                 color: isDark ? Colors.redAccent : colorScheme.error,
               ),

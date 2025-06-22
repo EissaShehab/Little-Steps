@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:littlesteps/features/child_profile/models/child_model.dart';
 import 'package:littlesteps/features/vaccinations/data/vaccination_service.dart';
 import 'package:logger/logger.dart';
@@ -11,9 +10,20 @@ final logger = Logger();
 class ChildProfileService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final VaccinationService _vaccinationService = VaccinationService();
 
-  /// Save child profile, initialize vaccinations, and schedule notifications
+  Future<bool> isIdentifierTaken(String identifier) async {
+    try {
+      final query = await _firestore
+          .collection('child_profiles')
+          .where('identifier', isEqualTo: identifier)
+          .get();
+      return query.docs.isNotEmpty;
+    } catch (e) {
+      logger.e("❌ Error checking identifier uniqueness: $e");
+      rethrow;
+    }
+  }
+
   Future<void> saveChildProfile({
     required String userId,
     required ChildProfile profile,
@@ -21,147 +31,151 @@ class ChildProfileService {
     File? imageFile,
   }) async {
     try {
-      String? imageUrl;
-      if (imageFile != null) {
-        logger.i('Uploading profile image for child $childId of user $userId...');
-        imageUrl = await _uploadProfileImage(userId, childId, imageFile);
-        logger.i('Image URL for child $childId: $imageUrl');
+      final isIdentifierUsed = await isIdentifierTaken(profile.identifier);
+      if (isIdentifierUsed) {
+        throw Exception('❌ المعرّف مستخدم لطفل آخر بالفعل.');
       }
 
-      final profileData = profile.toFirestore()
-        ..addAll({
-          'photoUrl': imageUrl ?? '',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'birthdate': profile.birthDate != null
-              ? Timestamp.fromDate(profile.birthDate)
-              : Timestamp.now(),
-        });
+      String? photoUrl;
+
+      if (imageFile != null) {
+        final ref =
+            _storage.ref().child('child_profiles/$userId/$childId/profile.jpg');
+        await ref.putFile(imageFile);
+        photoUrl = await ref.getDownloadURL();
+        logger.i(
+            "✅ Uploaded profile image for child $childId to Firebase Storage.");
+      } else {
+        logger.i("ℹ️ No profile image provided for child $childId.");
+      }
+
+      final updatedProfile = profile.copyWith(photoUrl: photoUrl);
 
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('children')
           .doc(childId)
-          .set(profileData, SetOptions(merge: true));
+          .set(updatedProfile.toFirestore());
 
-      logger.i("✅ Child profile saved: ${profile.name} for user $userId");
+      await _firestore.collection('child_profiles').doc(childId).set({
+        'identifier': profile.identifier,
+        'identifierType': profile.identifierType,
+        'userId': userId,
+        'childId': childId,
+      });
 
-      // Initialize default vaccinations
-      await _initializeChildVaccinations(userId, childId);
+      logger.i("✅ Saved child profile data for child $childId in Firestore.");
 
-      // Schedule vaccination notifications
-      await _vaccinationService.scheduleVaccinationNotifications(childId, profile.birthDate);
-      logger.i("✅ Scheduled notifications for child $childId of user $userId");
-    } on FirebaseException catch (e) {
-      logger.e("❌ Firestore error saving child profile for user $userId: ${e.message}");
-      throw Exception('Firestore error: ${e.message}');
+      final vaccinationService = VaccinationService();
+      await vaccinationService.deleteVaccinationsForChild(childId);
+      await vaccinationService.initializeVaccinationsForChild(
+          childId, profile.birthDate);
     } catch (e) {
-      logger.e("❌ Unexpected error saving child profile for user $userId: $e");
-      throw Exception('Failed to save child profile: $e');
+      logger.e("❌ Error saving child profile for child $childId: $e");
+      rethrow;
     }
   }
 
-  /// Initialize default vaccinations for a child using batch write
-  Future<void> _initializeChildVaccinations(String userId, String childId) async {
+  Future<void> updateChildProfile({
+    required String userId,
+    required String childId,
+    required ChildProfile profile,
+    File? imageFile,
+  }) async {
     try {
-      // Define default vaccinations if not using a Firestore collection
-      final defaultVaccinations = [
-        {'name': 'BCG (Bacillus Calmette–Guérin)', 'age': '0 months', 'status': 'upcoming'},
-        {'name': 'Hexavalent Vaccine (DTP-HepB-Hib-IPV) - 1st dose', 'age': '2 months', 'status': 'upcoming'},
-        {'name': 'Hexavalent Vaccine (DTP-HepB-Hib-IPV) - 2nd dose', 'age': '4 months', 'status': 'upcoming'},
-        {'name': 'Hexavalent Vaccine (DTP-HepB-Hib-IPV) - 3rd dose', 'age': '6 months', 'status': 'upcoming'},
-        {'name': 'Oral Polio Vaccine (OPV) - 1st dose', 'age': '2 months', 'status': 'upcoming'},
-        {'name': 'Oral Polio Vaccine (OPV) - Booster dose', 'age': '4 years', 'status': 'upcoming'},
-        {'name': 'MMR (Measles, Mumps, Rubella) - 1st dose', 'age': '12 months', 'status': 'upcoming'},
-        {'name': 'Measles Vaccine - 1st dose', 'age': '9 months', 'status': 'upcoming'},
-        {'name': 'DPT Booster - 1st booster', 'age': '5 years', 'status': 'upcoming'},
-      ];
+      final query = await _firestore
+          .collection('child_profiles')
+          .where('identifier', isEqualTo: profile.identifier)
+          .get();
+      final isIdentifierUsed = query.docs.any((doc) => doc.id != childId);
+      if (isIdentifierUsed) {
+        throw Exception('❌ المعرّف مستخدم لطفل آخر بالفعل.');
+      }
 
-      WriteBatch batch = _firestore.batch();
+      String? photoUrl = profile.photoUrl;
 
-      for (var vaccine in defaultVaccinations) {
-        final vaccineRef = _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('children')
-            .doc(childId)
-            .collection('vaccinations')
-            .doc();
-        batch.set(vaccineRef, {
-          ...vaccine,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        logger.i("✅ Prepared vaccination for child $childId: ${vaccine['name']}");
+      if (imageFile != null) {
+        final ref =
+            _storage.ref().child('child_profiles/$userId/$childId/profile.jpg');
+        await ref.putFile(imageFile);
+        photoUrl = await ref.getDownloadURL();
+        logger.i(
+            "✅ Updated profile image for child $childId in Firebase Storage.");
+      }
+
+      final updatedProfile = profile.copyWith(photoUrl: photoUrl);
+
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('children')
+          .doc(childId)
+          .update(updatedProfile.toFirestore());
+
+      await _firestore.collection('child_profiles').doc(childId).update({
+        'identifier': profile.identifier,
+        'identifierType': profile.identifierType,
+        'userId': userId,
+        'childId': childId,
+      });
+
+      logger.i("✅ Updated child profile data for child $childId in Firestore.");
+    } catch (e) {
+      logger.e("❌ Error updating child profile for child $childId: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> deleteChildProfile(String userId, String childId) async {
+    try {
+      final batch = _firestore.batch();
+
+      final childRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('children')
+          .doc(childId);
+      batch.delete(childRef);
+
+      final globalChildRef =
+          _firestore.collection('child_profiles').doc(childId);
+      batch.delete(globalChildRef);
+
+      final notificationsSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .where('childId', isEqualTo: childId)
+          .get();
+
+      for (var doc in notificationsSnapshot.docs) {
+        batch.delete(doc.reference);
       }
 
       await batch.commit();
-      logger.i("✅ All default vaccinations added for child $childId of user $userId");
-    } on FirebaseException catch (e) {
-      logger.e("❌ Error initializing vaccinations for child $childId: ${e.message}");
-      throw Exception('Firestore error initializing vaccinations: ${e.message}');
-    } catch (e) {
-      logger.e("❌ Unexpected error initializing vaccinations for child $childId: $e");
-      throw Exception('Failed to initialize vaccinations: $e');
-    }
-  }
+      logger.i(
+          "✅ Deleted child profile data and notifications for child $childId from Firestore.");
 
-  /// Upload profile image with compression and progress monitoring
-  Future<String> _uploadProfileImage(String userId, String childId, File image) async {
-    try {
-      final compressedImage = await _compressImage(image);
-      final ref = _storage
-          .ref()
-          .child('child_profiles/$userId/$childId/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      final uploadTask = ref.putFile(compressedImage);
-
-      // Monitor upload progress
-      uploadTask.snapshotEvents.listen(
-        (snapshot) {
-          final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          logger.i('Upload progress for child $childId: ${progress.toStringAsFixed(1)}%');
-        },
-        onError: (e) => logger.e('❌ Upload progress error for child $childId: $e'),
-      );
-
-      final snapshot = await uploadTask;
-      if (snapshot.state == TaskState.success) {
-        final downloadURL = await ref.getDownloadURL();
-        logger.i("✅ Profile image uploaded for child $childId: $downloadURL");
-        return downloadURL;
-      } else {
-        throw Exception('Image upload failed for child $childId: ${snapshot.state}');
-      }
-    } on FirebaseException catch (e) {
-      logger.e("❌ Firebase Storage error uploading image for child $childId: ${e.message}");
-      throw Exception('Image upload failed: ${e.message}');
-    } catch (e) {
-      logger.e("❌ Unexpected image upload error for child $childId: $e");
-      throw Exception('Unexpected error during image upload for child $childId: $e');
-    }
-  }
-
-  /// Compress image before upload for better performance
-  Future<File> _compressImage(File file) async {
-    try {
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.absolute.path,
-        file.path.replaceAll('.jpg', '_compressed.jpg'),
-        quality: 70,
-        minWidth: 800,
-        minHeight: 800,
-      );
-
-      if (result != null) {
-        return File(result.path);
-      } else {
-        logger.w("⚠️ Image compression failed for file ${file.path}, returning original file");
-        return file;
+      final ref =
+          _storage.ref().child('child_profiles/$userId/$childId/profile.jpg');
+      try {
+        await ref.getDownloadURL();
+        await ref.delete();
+        logger.i(
+            "✅ Deleted child profile image from Firebase Storage for child $childId.");
+      } catch (e) {
+        if (e.toString().contains('object-not-found')) {
+          logger.w(
+              "⚠️ Profile image not found in Firebase Storage for child $childId, skipping deletion.");
+        } else {
+          logger.e("❌ Error deleting profile image for child $childId: $e");
+          rethrow;
+        }
       }
     } catch (e) {
-      logger.w("⚠️ Image compression failed for file ${file.path}: $e");
-      return file;
+      logger.e("❌ Error deleting child profile for child $childId: $e");
+      rethrow;
     }
   }
 }

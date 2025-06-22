@@ -1,90 +1,136 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
+import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
+import 'package:littlesteps/shared/widgets/gradient_background.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:littlesteps/shared/widgets/typography.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!; // الوصول للترجمة
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'About',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF333333)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
+      appBar: CustomAppBar(
+        title: tr.about, // استخدام النص المترجم
+        onBackPressed: () => Navigator.pop(context),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'LittleSteps aims to digitize and simplify the management of your child\'s health journey, including growth tracking, vaccinations, and health tips. It transforms user inputs into organized health records based on predefined templates for each health category.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD3D3D3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+      body: Stack(
+        children: [
+          GradientBackground(
+            colors: [
+              Theme.of(context).colorScheme.primaryContainer,
+              Theme.of(context).colorScheme.secondaryContainer,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: FadeTransition(
+                opacity: AlwaysStoppedAnimation(1.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Contact Information:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
+                      tr.aboutLittleSteps,
+                      style: AppTypography.headingStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
-                      'eissashehab846@gmail.com',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
+                      tr.aboutContent,
+                      style: AppTypography.bodyStyle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Website: github/EissaShehab',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
+                    const SizedBox(height: 24),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr.contactInformation,
+                              style: AppTypography.subheadingStyle.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ListTile(
+                              leading: Icon(
+                                Icons.email,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              title: Text(
+                                'eissashehab846@gmail.com',
+                                style: AppTypography.bodyStyle.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                              onTap: () =>
+                                  _launchUrl('mailto:eissashehab846@gmail.com'),
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                Icons.link,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              title: Text(
+                                tr.websiteLabel,
+                                style: AppTypography.bodyStyle.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                              onTap: () =>
+                                  _launchUrl('https://github.com/EissaShehab'),
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                Icons.phone,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              title: Text(
+                                'NCC: 0786046084',
+                                style: AppTypography.bodyStyle.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                              onTap: () => _launchUrl('tel:+0786046084'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'NCC: 0786046084',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

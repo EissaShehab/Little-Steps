@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:littlesteps/routes/app_routes.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
 import 'package:logger/logger.dart';
@@ -31,6 +32,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: GradientBackground(
         colors: const [
@@ -59,14 +62,15 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Track your child\'s health journey',
-                style: TextStyle(
+              Text(
+                tr.splashTagline,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w400,
                   color: Colors.white70,
                   letterSpacing: 0.5,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -74,7 +78,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 30,
                 child: CircularProgressIndicator(
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 4, // Slightly thicker stroke for better visibility
+                  strokeWidth:
+                      4, // Slightly thicker stroke for better visibility
                 ),
               ),
             ],

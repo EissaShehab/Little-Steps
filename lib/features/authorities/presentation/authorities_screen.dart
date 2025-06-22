@@ -1,65 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:littlesteps/shared/widgets/custom_app_bar.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
-import 'package:littlesteps/shared/widgets/typography.dart';
+import 'package:littlesteps/shared/widgets/generic_card.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
+import 'dart:io' show Platform;
 
 class AuthoritiesScreen extends StatelessWidget {
   const AuthoritiesScreen({super.key});
 
-  // Static list of authorities (replace with Firestore data in production)
-  static const List<Map<String, String>> authorities = [
-    {
-      'name': 'Dr. Mohammad Habib',
-      'specialty': 'Pediatrician',
-      'hospital': 'City General Hospital',
-      'phone': '+1234567890',
-      'email': 'sarah.johnson@cityhospital.com',
-    },
-    {
-      'name': 'Nurse Sojud Carter',
-      'specialty': 'Pediatric Nurse',
-      'hospital': 'Sunshine Clinic',
-      'phone': '+1987654321',
-      'email': 'emily.carter@sunshineclinic.com',
-    },
-    {
-      'name': 'Dr. Michael Lee',
-      'specialty': 'Child Psychologist',
-      'hospital': 'Hope Medical Center',
-      'phone': '+1122334455',
-      'email': 'michael.lee@hopemedical.com',
-    },
-  ];
-
-  // Function to launch phone call
-  Future<void> _launchPhone(String phoneNumber) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    } else {
-      throw 'Could not launch $phoneNumber';
-    }
-  }
-
-  // Function to launch email
-  Future<void> _launchEmail(String email) async {
-    final Uri emailUri = Uri(scheme: 'mailto', path: email);
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
-      throw 'Could not launch $email';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tr = AppLocalizations.of(context)!;
+
+    final authorities = [
+      {
+        'name': tr.authorityRenadName,
+        'specialty': tr.authorityRenadSpecialty,
+        'hospital': tr.authorityRenadHospital,
+        'phone': '',
+        'email': 'Renadnaser5@gmail.com',
+      },
+      {
+        'name': tr.authorityRahafName,
+        'specialty': tr.authorityRahafSpecialty,
+        'hospital': tr.authorityRahafHospital,
+        'phone': '+962 7 9181 3178',
+        'email': 'rahafmoha22@gmail.com',
+      },
+      {
+        'name': tr.authorityReefName,
+        'specialty': tr.authorityReefSpecialty,
+        'hospital': tr.authorityReefHospital,
+        'phone': '+962 7 8226 2163',
+        'email': 'Reefmaj2002@gmail.com',
+      },
+      {
+        'name': tr.authorityLeenName,
+        'specialty': tr.authorityLeenSpecialty,
+        'hospital': tr.authorityLeenHospital,
+        'phone': '+962 7 8906 5390',
+        'email': 'Leenalhendawy4@gmail.com',
+      },
+      {
+        'name': tr.authoritySajoudName,
+        'specialty': tr.authoritySajoudSpecialty,
+        'hospital': tr.authoritySajoudHospital,
+        'phone': '+962 7 8156 3875',
+        'email': 'Sujoudzawana@gmail.com',
+      },
+    ];
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Contact Authorities',
+        title: tr.contactAuthorities,
         onBackPressed: () => Navigator.pop(context),
       ),
       body: GradientBackground(
@@ -69,131 +66,105 @@ class AuthoritiesScreen extends StatelessWidget {
           itemCount: authorities.length,
           itemBuilder: (context, index) {
             final authority = authorities[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: isDark ? Colors.grey[600]! : Colors.transparent,
-                    width: 1,
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name and Specialty
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              authority['name']!,
-                              style: AppTypography.subheadingStyle.copyWith(
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              authority['specialty']!,
-                              style: AppTypography.captionStyle.copyWith(
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Hospital
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.local_hospital,
-                            size: 20,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              authority['hospital']!,
-                              style: AppTypography.bodyStyle.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Phone Number (Tappable)
-                      GestureDetector(
-                        onTap: () => _launchPhone(authority['phone']!),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.phone,
-                              size: 20,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              authority['phone']!,
-                              style: AppTypography.bodyStyle.copyWith(
-                                color: colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Email Address (Tappable)
-                      GestureDetector(
-                        onTap: () => _launchEmail(authority['email']!),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.email,
-                              size: 20,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              authority['email']!,
-                              style: AppTypography.bodyStyle.copyWith(
-                                color: colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            return GenericCard(
+              title: authority['name']!,
+              subtitle: "${authority['specialty']} - ${authority['hospital']}",
+              description:
+                  "${tr.phoneLabel}: ${authority['phone']}\n${tr.emailLabel}: ${authority['email']}",
+              icon: Icons.local_hospital,
+              isExpandable: true,
+              hasAction: true,
+              actionLabel: tr.callNow,
+              onActionTap: () => _launchPhone(context, authority['phone']!),
+              hasSecondaryAction: true,
+              secondaryActionLabel: tr.emailNow,
+              onSecondaryActionTap: () =>
+                  _launchGmail(context, authority['email']!),
             );
           },
         ),
+      ),
+    );
+  }
+
+  Future<void> _launchPhone(BuildContext context, String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+      } else {
+        _showError(context, 'No phone app found to make the call.');
+      }
+    } catch (e) {
+      _showError(context, 'Failed to launch phone call: $e');
+    }
+  }
+
+  Future<void> _launchGmail(BuildContext context, String email) async {
+    final Uri fallbackEmailUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': 'Inquiry from Littlesteps App',
+        'body': 'Hello, I would like to contact you regarding...',
+      },
+    );
+
+    try {
+      if (Platform.isAndroid) {
+        final intent = AndroidIntent(
+          action: 'android.intent.action.SENDTO',
+          data: Uri.encodeFull(
+              'mailto:$email?subject=Inquiry from Littlesteps App&body=Hello, I would like to contact you regarding...'),
+          package: 'com.google.android.gm',
+          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+        );
+
+        await intent.launch();
+        return;
+      } else {
+        if (await canLaunchUrl(fallbackEmailUri)) {
+          await launchUrl(fallbackEmailUri,
+              mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+    } catch (_) {
+      // Skip to fallback
+    }
+
+    // fallback to mailto for Android if Gmail failed
+    try {
+      if (await canLaunchUrl(fallbackEmailUri)) {
+        await launchUrl(fallbackEmailUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+
+    // final fallback: copy email to clipboard
+    await Clipboard.setData(ClipboardData(text: email));
+    if (context.mounted) {
+      _showInfo(context,
+          '${AppLocalizations.of(context)!.emailLaunchFailed(email)}\n📋 تم نسخ البريد إلى الحافظة.');
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  void _showInfo(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

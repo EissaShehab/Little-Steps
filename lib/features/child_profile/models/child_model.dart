@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChildProfile {
   final String id;
   final String name;
-  final String nationalID;
+  final String identifier;
+  final String identifierType;
   final DateTime birthDate;
   final String gender;
   final String relationship;
@@ -13,7 +14,8 @@ class ChildProfile {
   ChildProfile({
     required this.id,
     required this.name,
-    required this.nationalID,
+    required this.identifier,
+    required this.identifierType,
     required this.birthDate,
     required this.gender,
     required this.relationship,
@@ -36,7 +38,8 @@ class ChildProfile {
     return ChildProfile(
       id: doc.id,
       name: data['name'] ?? '',
-      nationalID: data['nationalID'] ?? '',
+      identifier: data['identifier'] ?? data['nationalID'] ?? '',
+      identifierType: data['identifierType'] ?? 'national_id',
       birthDate: (data['birthDate'] as Timestamp).toDate(),
       gender: data['gender'] ?? 'Male',
       relationship: data['relationship'] ?? 'Parent',
@@ -47,7 +50,8 @@ class ChildProfile {
 
   Map<String, dynamic> toFirestore() => {
         'name': name,
-        'nationalID': nationalID,
+        'identifier': identifier,
+        'identifierType': identifierType,
         'birthDate': Timestamp.fromDate(birthDate),
         'gender': gender,
         'relationship': relationship,
@@ -58,7 +62,8 @@ class ChildProfile {
   ChildProfile copyWith({
     String? id,
     String? name,
-    String? nationalID,
+    String? identifier,
+    String? identifierType,
     DateTime? birthDate,
     String? gender,
     String? relationship,
@@ -68,7 +73,8 @@ class ChildProfile {
     return ChildProfile(
       id: id ?? this.id,
       name: name ?? this.name,
-      nationalID: nationalID ?? this.nationalID,
+      identifier: identifier ?? this.identifier,
+      identifierType: identifierType ?? this.identifierType,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       relationship: relationship ?? this.relationship,

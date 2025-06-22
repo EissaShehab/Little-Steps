@@ -1,16 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
-import 'package:logger/logger.dart';
 import 'package:littlesteps/features/growth/models/growth_model.dart';
+
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
+
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:uuid/uuid.dart';
 
 final logger = Logger();
 
 class GrowthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Box _localBox = Hive.box('growth');
+  static const int _pageSize = 20;
 
-  Future<GrowthMeasurement> addMeasurement(String childId, GrowthMeasurement measurement) async {
+  Future<GrowthMeasurement> addMeasurement(
+      String childId, GrowthMeasurement measurement) async {
     try {
       final docRef = await _firestore
           .collection('children')
@@ -20,7 +29,6 @@ class GrowthService {
 
       final updatedMeasurement = measurement.copyWith(id: docRef.id);
 
-      await _localBox.put('$childId-${measurement.date.millisecondsSinceEpoch}', updatedMeasurement.toMap());
       logger.i("✅ Measurement added for child $childId");
       return updatedMeasurement;
     } catch (e) {
@@ -38,88 +46,181 @@ class GrowthService {
           .doc(measurementId)
           .delete();
 
-      final keyToDelete = _localBox.keys.firstWhere(
-        (key) {
-          final rawData = _localBox.get(key);
-          if (rawData is Map) {
-            final measurement = GrowthMeasurement.fromMap(
-              Map<String, dynamic>.from(rawData as Map),
-            );
-            return measurement.id == measurementId;
-          }
-          return false;
-        },
-        orElse: () => null,
-      );
-
-      if (keyToDelete != null) {
-        await _localBox.delete(keyToDelete);
-        logger.i("✅ Measurement $measurementId deleted from local storage for child $childId");
-      } else {
-        logger.w("No local measurement found with ID $measurementId for child $childId");
-      }
-
-      logger.i("✅ Measurement $measurementId deleted from Firestore for child $childId");
+      logger.i(
+          "✅ Measurement $measurementId deleted from Firestore for child $childId");
     } catch (e) {
       logger.e("❌ Error deleting measurement: $e");
       rethrow;
     }
   }
 
-  Stream<List<GrowthMeasurement>> getMeasurements(String childId) {
+  Stream<List<GrowthMeasurement>> getMeasurements(
+      String childId, DocumentSnapshot? lastDocument) {
     try {
-      return _firestore
+      Query query = _firestore
           .collection('children')
           .doc(childId)
           .collection('growthMeasurements')
           .orderBy('date', descending: true)
-          .limit(100)
-          .snapshots()
-          .asyncMap((snapshot) async {
-            final data = snapshot.docs.map((doc) {
-              final docData = doc.data();
-              if (docData['date'] is Timestamp) {
-                docData['date'] = (docData['date'] as Timestamp).toDate();
-              }
-              return {...docData, 'id': doc.id};
-            }).toList();
-            final measurements = await compute(parseMeasurements, data);
-            for (var m in measurements) {
-              await _localBox.put('$childId-${m.date.millisecondsSinceEpoch}', m.toMap());
-            }
-            return measurements;
-          }).handleError((error) {
-            logger.e("❌ Error fetching measurements: $error");
-            return _getLocalMeasurements(childId);
-          });
+          .limit(_pageSize);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      return query.snapshots().asyncMap((snapshot) async {
+        final data = snapshot.docs.map((doc) {
+          final docData = doc.data() as Map<String, dynamic>;
+          if (docData['date'] is Timestamp) {
+            docData['date'] = (docData['date'] as Timestamp).toDate();
+          }
+          return {...docData, 'id': doc.id};
+        }).toList();
+
+        final measurements = await compute(parseMeasurementsIsolate, data);
+        return measurements;
+      }).handleError((error) {
+        logger.e("❌ Error fetching measurements: $error");
+        return <GrowthMeasurement>[];
+      });
     } catch (e) {
       logger.e("❌ Unexpected error setting up stream: $e");
-      return Stream.value(_getLocalMeasurements(childId));
+      return Stream.value(<GrowthMeasurement>[]);
     }
   }
 
-  List<GrowthMeasurement> _getLocalMeasurements(String childId) {
+  Future<void> exportToHealthRecords(
+    String userId,
+    String childId,
+    List<GrowthMeasurement> measurements, {
+    File? weightChartImage,
+    File? heightChartImage,
+    File? headChartImage,
+  }) async {
     try {
-      final localData = _localBox.keys
-          .where((key) => key.toString().startsWith(childId))
-          .map((key) {
-            final rawData = _localBox.get(key);
-            if (rawData is Map) {
-              return Map<String, dynamic>.from(rawData as Map);
-            } else {
-              throw Exception("Invalid data format in Hive for key $key");
-            }
-          })
-          .map((data) => GrowthMeasurement.fromMap(data))
-          .toList();
-      return localData;
+      final pdfFile = await generatePDFLocally(
+        measurements,
+        weightChartImage: weightChartImage,
+        heightChartImage: heightChartImage,
+        headChartImage: headChartImage,
+      );
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'growth_report_$timestamp.pdf';
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('healthRecords/$childId/$fileName');
+      await storageRef.putFile(pdfFile);
+      final attachmentUrl = await storageRef.getDownloadURL();
+
+      final docId = const Uuid().v4();
+      await FirebaseFirestore.instance
+          .collection('healthRecords')
+          .doc(docId)
+          .set({
+        'id': docId,
+        'childId': childId,
+        'title': 'Growth Measurements',
+        'description': 'Automatically exported child growth record',
+        'fileName': fileName,
+        'attachmentUrl': attachmentUrl,
+        'date': Timestamp.now(),
+      });
+
+      await pdfFile.delete();
+
+      logger.i("✅ Growth report exported to health records for child $childId");
     } catch (e) {
-      logger.e("❌ Error retrieving local measurements: $e");
-      return [];
+      logger.e("❌ Error exporting to health records: $e");
+      rethrow;
     }
   }
-}
 
-List<GrowthMeasurement> parseMeasurements(List<Map<String, dynamic>> data) {
-  return data.map((map) => GrowthMeasurement.fromMap(map)).toList();
+  Future<File> generatePDFLocally(
+    List<GrowthMeasurement> measurements, {
+    File? weightChartImage,
+    File? heightChartImage,
+    File? headChartImage,
+  }) async {
+    final pdf = pw.Document();
+
+    final headers = [
+      'Date',
+      'Age (Months)',
+      'Weight (kg)',
+      'Height (cm)',
+      'Head Circumference (cm)'
+    ];
+    final data = measurements
+        .map((m) => [
+              m.date.toIso8601String().split('T').first,
+              m.ageInMonths.toString(),
+              m.weight.toString(),
+              m.height.toString(),
+              m.headCircumference.toString(),
+            ])
+        .toList();
+
+    final weightChartImageBytes =
+        weightChartImage != null ? await weightChartImage.readAsBytes() : null;
+    final heightChartImageBytes =
+        heightChartImage != null ? await heightChartImage.readAsBytes() : null;
+    final headChartImageBytes =
+        headChartImage != null ? await headChartImage.readAsBytes() : null;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) => [
+          pw.Text('Child Growth Report',
+              style:
+                  pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 20),
+          pw.Text('Growth Measurements Table',
+              style: pw.TextStyle(fontSize: 16)),
+          pw.SizedBox(height: 10),
+          pw.Table.fromTextArray(
+            headers: headers,
+            data: data,
+            border: pw.TableBorder.all(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            cellAlignment: pw.Alignment.center,
+          ),
+          pw.SizedBox(height: 20),
+          if (weightChartImageBytes != null) ...[
+            pw.Text('Weight vs Age Chart', style: pw.TextStyle(fontSize: 16)),
+            pw.SizedBox(height: 10),
+            pw.Image(pw.MemoryImage(weightChartImageBytes),
+                width: 400, height: 200),
+            pw.SizedBox(height: 20),
+          ],
+          if (heightChartImageBytes != null) ...[
+            pw.Text('Height vs Age Chart', style: pw.TextStyle(fontSize: 16)),
+            pw.SizedBox(height: 10),
+            pw.Image(pw.MemoryImage(heightChartImageBytes),
+                width: 400, height: 200),
+            pw.SizedBox(height: 20),
+          ],
+          if (headChartImageBytes != null) ...[
+            pw.Text('Head Circumference vs Age Chart',
+                style: pw.TextStyle(fontSize: 16)),
+            pw.SizedBox(height: 10),
+            pw.Image(pw.MemoryImage(headChartImageBytes),
+                width: 400, height: 200),
+          ],
+        ],
+      ),
+    );
+
+    final dir = await getTemporaryDirectory();
+    final file = File(
+        '${dir.path}/growth_report_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  static List<GrowthMeasurement> parseMeasurementsIsolate(
+      List<Map<String, dynamic>> data) {
+    return data.map((map) => GrowthMeasurement.fromMap(map)).toList();
+  }
 }

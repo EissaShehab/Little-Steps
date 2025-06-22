@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -11,6 +13,7 @@ final logger = Logger();
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   static Future<void> initialize() async {
     try {
@@ -19,7 +22,7 @@ class NotificationService {
       const InitializationSettings initializationSettings =
           InitializationSettings(android: androidInitializationSettings);
       await _notificationsPlugin.initialize(initializationSettings);
-      await _createNotificationChannel();
+      await _createNotificationChannels();
 
       tz.initializeTimeZones();
       String timeZoneName = await FlutterTimezone.getLocalTimezone();
@@ -27,53 +30,109 @@ class NotificationService {
       logger.i("✅ Notification Service Initialized Successfully");
     } catch (e) {
       logger.e("❌ Notification initialization failed: $e");
-      throw Exception('Failed to initialize notifications: $e');
     }
   }
 
-  static Future<void> _createNotificationChannel() async {
+  static Future<void> _createNotificationChannels() async {
     try {
-      final AndroidNotificationChannel channel = const AndroidNotificationChannel(
+      const AndroidNotificationChannel vaccinationChannel = AndroidNotificationChannel(
         'vaccination_channel',
         'Vaccination Reminders',
         description: 'Reminders for scheduled vaccinations',
         importance: Importance.high,
       );
-      await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
-      logger.i("✅ Notification channel created: vaccination_channel");
+      const AndroidNotificationChannel testChannel = AndroidNotificationChannel(
+        'test_channel',
+        'Test Notifications',
+        description: 'Channel for test notifications',
+        importance: Importance.max,
+      );
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(vaccinationChannel);
+      await androidPlugin?.createNotificationChannel(testChannel);
+      logger.i("✅ Notification channels created");
     } catch (e) {
-      logger.e("❌ Failed to create notification channel: $e");
-      throw Exception('Failed to create notification channel: $e');
+      logger.e("❌ Failed to create notification channels: $e");
     }
   }
 
-  Future<void> requestPermission() async {
+  Future<bool> requestPermission() async {
     try {
       final androidInfo = await DeviceInfoPlugin().androidInfo;
       final sdkVersion = androidInfo.version.sdkInt ?? 0;
 
       if (sdkVersion >= 33) {
         final status = await Permission.notification.request();
-        if (status.isGranted) {
-          logger.i("✅ Notifications permission granted.");
-        } else {
+        if (!status.isGranted) {
           logger.w("❌ Notifications permission denied.");
+          return false;
         }
-      } else {
-        logger.i("ℹ️ Notifications permission not required for API < 33.");
+      }
+      if (sdkVersion >= 31) {
+        final alarmStatus = await Permission.scheduleExactAlarm.request();
+        if (!alarmStatus.isGranted) {
+          logger.w("⚠️ Exact alarm permission not granted.");
+          return false;
+        }
+      }
+      logger.i("✅ Notification permissions granted");
+      return true;
+    } catch (e) {
+      logger.e("❌ Error requesting permissions: $e");
+      return false;
+    }
+  }
+
+  Future<void> showFCMNotification({
+    required String childId,
+    required String vaccineName,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        logger.w("⚠️ No user logged in, skipping notification.");
+        return;
       }
 
-      if (sdkVersion >= 31) {
-        final alarmStatus = await Permission.scheduleExactAlarm.status;
-        if (!alarmStatus.isGranted) {
-          logger.w("⚠️ Exact alarm permission not granted; using inexact scheduling.");
-        }
-      }
+      // عرض الإشعار محليًا
+      await _notificationsPlugin.show(
+        0,
+        title,
+        body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'vaccination_channel',
+            'Vaccination Reminders',
+            channelDescription: 'Reminders for scheduled vaccinations',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+      );
+
+      // حفظ الإشعار في Firestore
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .add({
+        'title': title,
+        'message': body,
+        'childId': childId,
+        'vaccineName': vaccineName,
+        'type': 'vaccination',
+        'delivered': true,
+        'timestamp': FieldValue.serverTimestamp(),
+        'deliveredAt': DateTime.now().toIso8601String(),
+        'scheduledTime': Timestamp.fromDate(DateTime.now()),
+      });
+
+      logger.i("✅ Immediate notification stored for $vaccineName");
     } catch (e) {
-      logger.e("❌ Error requesting permission: $e");
-      throw Exception('Failed to request permission: $e');
+      logger.e("❌ Error showing/storing FCM notification: $e");
     }
   }
 
@@ -90,77 +149,87 @@ class NotificationService {
             channelDescription: 'Channel for test notifications',
             importance: Importance.max,
             priority: Priority.high,
-            playSound: true,
           ),
         ),
       );
-      logger.i("✅ Immediate test notification sent.");
+      logger.i("✅ Test notification sent");
     } catch (e) {
-      logger.e("❌ Failed to send test notification: $e");
-      throw Exception('Failed to send test notification: $e');
+      logger.e("❌ Error sending test notification: $e");
+    }
+  }
+
+  Future<void> showLocalNotificationOnly({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await _notificationsPlugin.show(
+        0,
+        title,
+        body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'vaccination_channel',
+            'Vaccination Reminders',
+            channelDescription: 'Reminders for scheduled vaccinations',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+      );
+      logger.i("🔔 Local-only notification shown");
+    } catch (e) {
+      logger.e("❌ Error showing local notification: $e");
     }
   }
 
   Future<void> scheduleNotification(
-      int id, String title, String body, DateTime scheduledDate) async {
+      String childId, String vaccineName, DateTime date) async {
     try {
-      final DateTime now = DateTime.now();
-      if (scheduledDate.isBefore(now.add(const Duration(seconds: 5)))) {
-        logger.w("🚨 Scheduled time too soon! Adjusting to 5 seconds delay.");
-        scheduledDate = now.add(const Duration(seconds: 5));
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        logger.w("⚠️ No user logged in, skipping notification scheduling.");
+        return;
       }
 
-      final tz.TZDateTime scheduledTime = tz.TZDateTime.from(scheduledDate, tz.local);
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      final sdkVersion = androidInfo.version.sdkInt ?? 0;
+      final tz.TZDateTime scheduledTime = tz.TZDateTime.from(date, tz.local);
 
-      await _notificationsPlugin.zonedSchedule(
-        id,
-        title,
-        body,
-        scheduledTime,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'vaccination_channel',
-            'Vaccination Reminders',
-            channelDescription: 'Reminders for scheduled vaccinations',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-        ),
-        androidScheduleMode: sdkVersion >= 31
-            ? AndroidScheduleMode.exactAllowWhileIdle
-            : AndroidScheduleMode.inexact,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      );
-      logger.i("✅ Notification for $title scheduled at $scheduledDate");
-    } catch (e) {
-      logger.e("❌ Failed to schedule notification for $title: $e");
-      throw Exception('Failed to schedule notification: $e');
-    }
-  }
+      // التحقق من وجود إشعار مكرر
+      final existingSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .where('vaccineName', isEqualTo: vaccineName)
+          .where('childId', isEqualTo: childId)
+          .where('scheduledTime', isEqualTo: Timestamp.fromDate(scheduledTime))
+          .limit(1)
+          .get();
 
-  Future<void> showFCMNotification({required String title, required String body}) async {
-    try {
-      await _notificationsPlugin.show(
-        0, // Unique ID for FCM notifications
-        title,
-        body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'vaccination_channel',
-            'Vaccination Reminders',
-            channelDescription: 'Reminders for scheduled vaccinations',
-            importance: Importance.high,
-            priority: Priority.high,
-            playSound: true,
-          ),
-        ),
-      );
-      logger.i("✅ FCM notification shown: $title - $body");
+      if (existingSnapshot.docs.isNotEmpty) {
+        logger.i(
+            "ℹ️ Notification for $vaccineName at $scheduledTime already exists, skipping.");
+        return;
+      }
+
+      // حفظ الإشعار المجدول في Firestore
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .add({
+        'title': 'Vaccination Reminder',
+        'message': 'Time for $vaccineName!',
+        'childId': childId,
+        'vaccineName': vaccineName,
+        'scheduledTime': Timestamp.fromDate(scheduledTime),
+        'timestamp': FieldValue.serverTimestamp(),
+        'delivered': false,
+        'type': 'vaccination',
+      });
+
+      logger.i("⏰ Notification scheduled for $vaccineName at $scheduledTime");
     } catch (e) {
-      logger.e("❌ Failed to show FCM notification: $e");
-      throw Exception('Failed to show FCM notification: $e');
+      logger.e("❌ Failed to schedule notification for $vaccineName: $e");
     }
   }
 }

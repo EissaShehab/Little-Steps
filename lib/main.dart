@@ -1,139 +1,222 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // إضافة استيراد Hive
+import 'package:go_router/go_router.dart';
+import 'package:littlesteps/Upload/upload_healthTips.dart';
 import 'package:littlesteps/core/firebase_options.dart';
-import 'package:littlesteps/routes/app_routes.dart';
-import 'package:littlesteps/features/notifications/data/notification_service.dart';
 import 'package:littlesteps/features/growth/data/who_data_service.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
+import 'package:littlesteps/routes/app_routes.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:littlesteps/features/notifications/data/notification_service.dart';
 import 'package:littlesteps/providers/theme_provider.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
-import 'package:logger/logger.dart';
+import 'package:littlesteps/features/settings/presentation/settings_screen.dart'
+    show localeProvider;
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
+import 'package:littlesteps/features/child_profile/models/child_model.dart';
+import 'package:littlesteps/Upload/upload_vaccinations.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 final logger = Logger();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  logger.i("💬 Background Message: ${message.notification?.title} - ${message.notification?.body}");
 }
 
-Future<void> _initializeNonCriticalServices() async {
-  await Future.wait([
-    Future(() async {
-      try {
-        await WHOService.initialize(); // تصحيح: استدعاء الدالة بشكل صحيح
-        logger.i("✅ WHO Growth Data Loaded Successfully!");
-      } catch (e) {
-        logger.e("❌ Error loading WHO data: $e");
-      }
-    }),
-    Future(() async {
-      try {
-        await NotificationService.initialize();
-        await NotificationService().requestPermission();
-        Future.delayed(Duration.zero, () => NotificationService().sendTestNotification());
-        logger.i("✅ Notification Service Initialized Successfully!");
-      } catch (e) {
-        logger.e("❌ Notification initialization failed: $e");
-      }
-    }),
-  ]);
+Future<void> _updateFCMToken() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      logger.w("⚠️ No user logged in, skipping FCM token update.");
+      return;
+    }
+
+    final userDoc = _firestore.collection('users').doc(user.uid);
+    final docSnapshot = await userDoc.get();
+    if (!docSnapshot.exists) {
+      await userDoc.set({
+        'email': user.email ?? '',
+        'name': user.displayName ?? '',
+        'fcmToken': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      logger.i("✅ Created user document for ${user.uid}");
+    }
+
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      await userDoc.update({
+        'fcmToken': token,
+      });
+      logger.i("💡 ✅ Updated FCM token for user ${user.uid}: $token");
+    } else {
+      logger.w("⚠️ Failed to retrieve FCM token.");
+    }
+  } catch (e) {
+    logger.e("❌ Error updating FCM token: $e");
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تهيئة Hive
   try {
-    await Hive.initFlutter();
-    await Hive.openBox('growth'); // فتح الصندوق المسمى 'growth'
-    logger.i("✅ Hive Initialized and 'growth' Box Opened Successfully!");
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+    logger.i("✅ Firebase initialized");
+
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug, // استخدم playIntegrity في الإنتاج
+    );
+    logger.i("✅ Firebase App Check initialized");
+
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+    logger.i("✅ Firestore offline persistence enabled");
+    await uploadHealthTips();
+    final uploader = VaccinationUploader();
+    await uploader.uploadIfEmpty();
   } catch (e) {
-    logger.e("❌ Hive initialization failed: $e");
+    logger.e("❌ Error initializing Firebase or uploading vaccinations: $e");
+    rethrow;
   }
 
-  bool error = false;
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    logger.i("✅ Firebase Initialized Successfully!");
+    await WHOService.initialize();
+    logger.i("✅ WHOService initialized");
   } catch (e) {
-    logger.e("❌ Firebase initialization failed: $e");
-    error = true;
+    logger.e("❌ Error initializing WHOService: $e");
   }
 
-  try {
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Amman'));
-    logger.i("✅ Timezone Initialized (Asia/Amman)");
-  } catch (e) {
-    logger.e("❌ Timezone initialization failed: $e");
-  }
-
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-  logger.i("🔑 FCM Token: $fcmToken");
-
-  final user = FirebaseAuth.instance.currentUser;
-  if (fcmToken != null && user != null) {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set({'fcmToken': fcmToken}, SetOptions(merge: true));
-    logger.i("✅ FCM Token stored in Firestore for user: ${user.uid}");
-  }
-
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    logger.i("💬 Foreground Message: ${message.notification?.title} - ${message.notification?.body}");
-    if (message.notification != null) {
-      NotificationService().showFCMNotification(
-        title: message.notification!.title ?? "Notification",
-        body: message.notification!.body ?? "You have a new message",
-      );
+  await FirebaseMessaging.instance.requestPermission();
+  FirebaseAuth.instance.authStateChanges().listen((user) async {
+    if (user != null) {
+      await _updateFCMToken();
     }
   });
 
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    logger.i("💬 Opened from Notification (Background): ${message.notification?.title}");
-    navigatorKey.currentContext?.go(AppRoutes.notifications);
+  FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'fcmToken': token,
+      });
+      logger.i("💡 ✅ FCM token refreshed for user ${user.uid}: $token");
+    }
   });
 
-  final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-  if (initialMessage != null) {
-    logger.i("💬 Opened from Notification (Terminated): ${initialMessage.notification?.title}");
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentContext?.go(AppRoutes.notifications);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await NotificationService.initialize();
+  runApp(const ProviderScope(child: MyApp()));
+}
+
+class MyApp extends ConsumerStatefulWidget {
+  const MyApp({super.key});
+  @override
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      if (notification != null) {
+        NotificationService().showLocalNotificationOnly(
+          title: notification.title ?? "Notification",
+          body: notification.body ?? "You have a new message",
+        );
+      }
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
+      await _handleNotificationNavigation(message);
+    });
+
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleNotificationNavigation(message);
+        });
+      }
     });
   }
 
-  Future.delayed(Duration.zero, _initializeNonCriticalServices);
+  Future<void> _handleNotificationNavigation(RemoteMessage message) async {
+    final data = message.data;
+    final type = data['type'];
+    final childId = data['childId'];
 
-  runApp(
-    ProviderScope(
-      child: MyApp(error: error),
-    ),
-  );
-}
+    if (childId == null) {
+      logger.w("❌ Notification missing childId");
+      return;
+    }
 
-class MyApp extends ConsumerWidget {
-  final bool error;
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
 
-  const MyApp({super.key, required this.error});
+      final doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('children')
+          .doc(childId)
+          .get();
+
+      if (!doc.exists) return;
+
+      final child = ChildProfile.fromFirestore(doc, doc.id);
+
+      if (type == 'vaccination') {
+        navigatorKey.currentContext?.go(
+          AppRoutes.vaccinations,
+          extra: {
+            'childId': child.id,
+            'birthDate': child.birthDate,
+            'child': child,
+          },
+        );
+      } else if (type == 'weather') {
+        navigatorKey.currentContext?.go(
+          '/child-weather',
+          extra: child,
+        );
+      } else {
+        navigatorKey.currentContext?.go(
+          '${AppRoutes.notifications}?childId=$childId',
+        );
+      }
+    } catch (e) {
+      logger.e("❌ Error handling notification navigation: $e");
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = ref.watch(themeDataProvider);
-    logger.i('Building MyApp with theme: isDarkMode = ${ref.watch(themeProvider)}');
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'LittleSteps',
       theme: theme,
       routerConfig: AppRoutes.router,
+      locale: locale,
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
     );
   }
 }

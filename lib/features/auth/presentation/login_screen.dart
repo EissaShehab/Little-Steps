@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:littlesteps/gen_l10n/app_localizations.dart';
 import 'package:littlesteps/providers/providers.dart';
 import 'package:littlesteps/routes/app_routes.dart';
 import 'package:littlesteps/shared/widgets/gradient_background.dart';
@@ -55,10 +56,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close the loading dialog
+        Navigator.of(context).pop();
         final initialRoute = await AppRoutes.determineInitialRoute();
-        logger.i(
-            "✅ User logged in successfully: ${_emailController.text}, navigating to $initialRoute");
+        logger.i("✅ User logged in: ${_emailController.text}");
         context.go(initialRoute);
       }
     } on FirebaseAuthException catch (e) {
@@ -82,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     if (email.isEmpty ||
         !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      _showError('Please enter a valid email address to reset your password.');
+      _showError(AppLocalizations.of(context)!.invalidEmail);
       return;
     }
 
@@ -94,8 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       logger.e("❌ Password reset failed: ${e.code} - ${e.message}");
       if (mounted) {
-        _showError(e.message ??
-            'Failed to send password reset email. Please try again.');
+        _showError(e.message ?? 'Failed to send password reset email.');
       }
     }
   }
@@ -144,11 +143,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: GradientBackground(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: const [Color(0xFF2196F3), Colors.white],
+        showPattern: true, // Enable pattern (optional, requires patternImage)
+        // patternImage: 'assets/pattern.png', // Uncomment and provide asset path if desired
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -158,106 +160,104 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: IntrinsicHeight(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0, vertical: 32.0),
+                          horizontal: 32.0, vertical: 40.0),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.child_care,
-                              size: 60,
-                              color: Colors.white,
-                              semanticLabel: 'Child Care Icon',
-                            ),
-                            const SizedBox(height: 20),
+                            const Icon(Icons.child_care,
+                                size: 70, color: Colors.white),
+                            const SizedBox(height: 24),
                             RichText(
-                              text: const TextSpan(
+                              text: TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'L',
+                                    text: 'LittleSteps',
                                     style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blueAccent,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: 'ittleSteps',
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFFFFCA28), // Amber accent
                                     ),
                                   ),
                                 ],
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'Welcome Back',
-                              style: TextStyle(
+                            const SizedBox(height: 12),
+                            Text(
+                              tr.welcomeBack,
+                              style: const TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
-                                letterSpacing: 0.5,
                               ),
                               textAlign: TextAlign.center,
-                              semanticsLabel: 'Welcome Back Title',
                             ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'Continue your child\'s health journey',
+                            const SizedBox(height: 12),
+                            Text(
+                              tr.continueJourney,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 48),
                             InputField(
                               controller: _emailController,
                               focusNode: _emailFocusNode,
-                              label: 'Email',
+                              label: tr.email,
                               icon: Icons.email,
                               keyboardType: TextInputType.emailAddress,
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              borderRadius: 12,
                               validator: (value) {
-                                if (value == null || value.isEmpty)
-                                  return 'Email is required';
+                                if (value == null || value.isEmpty) {
+                                  return tr.emailRequired;
+                                }
                                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                    .hasMatch(value))
-                                  return 'Enter a valid email address';
+                                    .hasMatch(value)) {
+                                  return tr.invalidEmail;
+                                }
                                 return null;
                               },
-                              onFieldSubmitted: (value) =>
+                              onFieldSubmitted: (_) =>
                                   _passwordFocusNode.requestFocus(),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             InputField(
                               controller: _passwordController,
                               focusNode: _passwordFocusNode,
-                              label: 'Password',
+                              label: tr.password,
                               icon: Icons.lock,
                               obscureText: _obscurePassword,
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              borderRadius: 12,
                               validator: (value) {
-                                if (value == null || value.isEmpty)
-                                  return 'Password is required';
-                                if (value.length < 8)
-                                  return 'Password must be at least 8 characters';
-                                if (!RegExp(r'(?=.*[A-Z])').hasMatch(value))
-                                  return 'Password must contain at least one uppercase letter';
-                                if (!RegExp(r'(?=.*[a-z])').hasMatch(value))
-                                  return 'Password must contain at least one lowercase letter';
-                                if (!RegExp(r'(?=.*\d)').hasMatch(value))
-                                  return 'Password must contain at least one number';
+                                if (value == null || value.isEmpty) {
+                                  return tr.passwordRequired;
+                                }
+                                if (value.length < 8) {
+                                  return tr.passwordMinLength;
+                                }
+                                if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                                  return tr.passwordUppercase;
+                                }
+                                if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
+                                  return tr.passwordLowercase;
+                                }
+                                if (!RegExp(r'(?=.*\d)').hasMatch(value)) {
+                                  return tr.passwordNumber;
+                                }
                                 if (!RegExp(r'(?=.*[!@#$%^&*(),.?":{}|<>])')
-                                    .hasMatch(value))
-                                  return 'Password must contain at least one special character';
+                                    .hasMatch(value)) {
+                                  return tr.passwordSpecial;
+                                }
                                 return null;
                               },
                               suffixIcon: IconButton(
@@ -266,16 +266,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                   color: Colors.white70,
-                                  semanticLabel: _obscurePassword
-                                      ? 'Show Password'
-                                      : 'Hide Password',
                                 ),
                                 onPressed: () => setState(
                                     () => _obscurePassword = !_obscurePassword),
                               ),
-                              onFieldSubmitted: (value) => _login(),
+                              onFieldSubmitted: (_) => _login(),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -286,85 +283,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       onChanged: (value) =>
                                           setState(() => _rememberMe = value!),
                                       checkColor: Colors.white,
-                                      activeColor: Colors.blueAccent,
+                                      activeColor:
+                                          Color(0xFFFFCA28), // Amber accent
                                       side: const BorderSide(
-                                          color: Colors
-                                              .white70), // Add this to style the unchecked border
+                                          color: Colors.white70),
                                     ),
-                                    const Text(
-                                      'Remember Me',
-                                      style: TextStyle(
+                                    Text(
+                                      tr.rememberMe,
+                                      style: const TextStyle(
                                           color: Colors.white70, fontSize: 14),
                                     ),
                                   ],
                                 ),
                                 TextButton(
                                   onPressed: _resetPassword,
-                                  child: const Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 14),
+                                  child: Text(
+                                    tr.forgotPassword,
+                                    style: const TextStyle(
+                                      color: Color(0xFFFFCA28), // Amber accent
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
-                                  'New user? ',
-                                  style: TextStyle(
+                                Text(
+                                  tr.newUser,
+                                  style: const TextStyle(
                                       color: Colors.white70, fontSize: 15),
                                 ),
                                 TextLink(
                                   text: '',
-                                  linkText: 'Create account',
+                                  linkText: tr.createAccount,
                                   onTap: () => context.go(AppRoutes.register),
                                   linkStyle: const TextStyle(
-                                    color: Colors.white,
+                                    color: Color(0xFFFFCA28), // Amber accent
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                   ),
-                                  semanticLabel:
-                                      'Navigate to Registration Screen',
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 30),
-                            ElevatedButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () async => await _login(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 80, vertical: 15),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25)),
-                                elevation: 5,
-                                shadowColor: Colors.blueAccent.withOpacity(0.3),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          color: Colors.blueAccent,
-                                          strokeWidth: 2),
-                                    )
-                                  : const Text(
-                                      'Login',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.blueAccent,
-                                        fontWeight: FontWeight.bold,
+                            const SizedBox(height: 32),
+                            AnimatedOpacity(
+                              opacity: _isLoading ? 0.7 : 1.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Color(0xFFFFCA28), // Amber button
+                                  foregroundColor: Colors.black87,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 100, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.3),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.black87,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        tr.login,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
                                       ),
-                                      semanticsLabel: 'Login Button',
-                                    ),
+                              ),
                             ),
-                            const SizedBox(
-                                height: 20), // Add padding at the bottom
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
